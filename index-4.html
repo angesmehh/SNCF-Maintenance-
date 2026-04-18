@@ -1,0 +1,3915 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SNCF Maintenance</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E2001A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SNCF MNT">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap');
+
+  :root {
+    --sncf-red: #E2001A;
+    --sncf-dark: #1A1A2E;
+    --sncf-mid: #16213E;
+    --sncf-panel: #0F3460;
+    --sncf-gold: #F5A623;
+    --sncf-green: #27AE60;
+    --sncf-text: #ECF0F1;
+    --sncf-muted: #7F8C9A;
+    --sncf-border: rgba(255,255,255,0.1);
+    --sncf-card: rgba(255,255,255,0.05);
+    --radius: 8px;
+    --shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--sncf-dark);
+    color: var(--sncf-text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== HEADER ===== */
+  .app-header {
+    background: linear-gradient(135deg, var(--sncf-mid) 0%, #0a0a1a 100%);
+    border-bottom: 3px solid var(--sncf-red);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(226,0,26,0.3);
+  }
+
+  .header-left { display: flex; align-items: center; gap: 14px; }
+
+  .sncf-logo {
+    background: var(--sncf-red);
+    color: white;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 20px;
+    padding: 6px 12px;
+    letter-spacing: 2px;
+    border-radius: 4px;
+  }
+
+  .app-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .app-subtitle { font-size: 11px; color: var(--sncf-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 1px; }
+
+  .header-right { display: flex; gap: 10px; align-items: center; }
+
+  .btn-header {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--sncf-border);
+    color: var(--sncf-text);
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-header:hover { background: rgba(255,255,255,0.15); }
+  .btn-header.primary { background: var(--sncf-red); border-color: var(--sncf-red); }
+  .btn-header.primary:hover { background: #c0001a; }
+
+  /* ===== VIEWS ===== */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ===== DASHBOARD ===== */
+  .dashboard { padding: 20px; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--sncf-card);
+    border: 1px solid var(--sncf-border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .stat-card.red::before { background: var(--sncf-red); }
+  .stat-card.gold::before { background: var(--sncf-gold); }
+  .stat-card.green::before { background: var(--sncf-green); }
+
+  .stat-number {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 36px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .stat-card.red .stat-number { color: var(--sncf-red); }
+  .stat-card.gold .stat-number { color: var(--sncf-gold); }
+  .stat-card.green .stat-number { color: var(--sncf-green); }
+
+  .stat-label { font-size: 11px; color: var(--sncf-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--sncf-muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--sncf-border);
+  }
+
+  /* ===== TOOLBAR (sort + view) ===== */
+  .dashboard-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .sort-label {
+    font-size: 11px;
+    color: var(--sncf-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+
+  .sort-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--sncf-border);
+    color: var(--sncf-muted);
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .sort-btn:hover { background: rgba(255,255,255,0.1); color: var(--sncf-text); }
+  .sort-btn.active { background: rgba(226,0,26,0.18); border-color: rgba(226,0,26,0.45); color: var(--sncf-red); }
+
+  .toolbar-sep { flex: 1; }
+
+  /* ===== FOLDER CARD ===== */
+  .folder-card {
+    background: linear-gradient(135deg, rgba(15,52,96,0.5) 0%, rgba(15,52,96,0.2) 100%);
+    border: 1px solid rgba(245,166,35,0.25);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .folder-card:hover { border-color: rgba(245,166,35,0.45); }
+
+  .folder-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .folder-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .folder-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--sncf-gold);
+    flex: 1;
+  }
+
+  .folder-meta {
+    font-size: 11px;
+    color: var(--sncf-muted);
+    flex-shrink: 0;
+  }
+
+  .folder-chevron {
+    color: var(--sncf-gold);
+    font-size: 16px;
+    transition: transform 0.25s;
+    flex-shrink: 0;
+  }
+
+  .folder-card.open .folder-chevron { transform: rotate(90deg); }
+
+  .folder-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .btn-folder-action {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--sncf-muted);
+    padding: 4px 9px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+  }
+
+  .btn-folder-action:hover { background: rgba(255,255,255,0.12); color: var(--sncf-text); }
+  .btn-folder-action.danger:hover { background: rgba(226,0,26,0.2); color: var(--sncf-red); border-color: rgba(226,0,26,0.3); }
+
+  .folder-body {
+    padding: 0 12px 12px;
+    display: none;
+  }
+
+  .folder-card.open .folder-body { display: block; }
+
+  /* Module card "assign to folder" chip on dashboard */
+  .module-folder-chip {
+    font-size: 10px;
+    background: rgba(15,52,96,0.6);
+    border: 1px solid rgba(245,166,35,0.2);
+    color: rgba(245,166,35,0.7);
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-family: 'Barlow Condensed', sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90px;
+  }
+
+  /* ===== MODULE LIST ===== */
+  .module-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .module-card {
+    background: linear-gradient(135deg, var(--sncf-card) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid var(--sncf-border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .module-card::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    border-radius: 4px 0 0 4px;
+  }
+
+  .module-card.status-ok::after { background: var(--sncf-green); }
+  .module-card.status-warn::after { background: var(--sncf-gold); }
+  .module-card.status-crit::after { background: var(--sncf-red); }
+
+  .module-card:hover {
+    border-color: rgba(255,255,255,0.25);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+  }
+
+  .module-icon { font-size: 28px; margin-bottom: 8px; }
+
+  .module-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .module-meta {
+    font-size: 11px;
+    color: var(--sncf-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .module-meta-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    gap: 6px;
+  }
+
+  .badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge.ok { background: rgba(39,174,96,0.2); color: var(--sncf-green); border: 1px solid rgba(39,174,96,0.4); }
+  .badge.warn { background: rgba(245,166,35,0.2); color: var(--sncf-gold); border: 1px solid rgba(245,166,35,0.4); }
+  .badge.crit { background: rgba(226,0,26,0.2); color: var(--sncf-red); border: 1px solid rgba(226,0,26,0.4); }
+
+  /* Rename button on module card */
+  .btn-rename-module {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--sncf-muted);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    line-height: 1;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .btn-rename-module:hover { background: rgba(255,255,255,0.14); color: var(--sncf-text); }
+
+  /* Rename button on procedure */
+  .btn-rename-proc {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--sncf-muted);
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .btn-rename-proc:hover { background: rgba(255,255,255,0.12); color: var(--sncf-text); }
+
+  /* Rename button in detail header */
+  .btn-rename-detail {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--sncf-muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+
+  .btn-rename-detail:hover { background: rgba(255,255,255,0.14); color: var(--sncf-text); }
+
+  /* Delete button on module card */
+  .btn-delete-module {
+    background: rgba(226,0,26,0.1);
+    border: 1px solid rgba(226,0,26,0.25);
+    color: var(--sncf-red);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    line-height: 1;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .btn-delete-module:hover { background: rgba(226,0,26,0.3); }
+
+  /* ===== MODULE DETAIL ===== */
+  .module-detail { padding: 0; }
+
+  .detail-header {
+    background: linear-gradient(135deg, var(--sncf-mid) 0%, #0a0a1a 100%);
+    padding: 20px;
+    border-bottom: 1px solid var(--sncf-border);
+  }
+
+  .detail-header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .back-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--sncf-border);
+    color: var(--sncf-text);
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    transition: all 0.2s;
+  }
+
+  .back-btn:hover { background: rgba(255,255,255,0.15); }
+
+  .detail-module-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .procedures-list { padding: 16px; }
+
+  .procedure-item {
+    background: var(--sncf-card);
+    border: 1px solid var(--sncf-border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+
+  .procedure-item:hover { border-color: rgba(255,255,255,0.2); }
+
+  .procedure-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .proc-header-clickable {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    cursor: pointer;
+  }
+
+  .proc-number {
+    background: var(--sncf-red);
+    color: white;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 14px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .proc-info { flex: 1; }
+
+  .proc-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 2px;
+  }
+
+  .proc-steps-count { font-size: 11px; color: var(--sncf-muted); }
+
+  .proc-chevron {
+    color: var(--sncf-muted);
+    font-size: 18px;
+    transition: transform 0.2s;
+  }
+
+  .procedure-item.open .proc-chevron { transform: rotate(90deg); }
+
+  /* Delete procedure button */
+  .btn-delete-proc {
+    background: rgba(226,0,26,0.1);
+    border: 1px solid rgba(226,0,26,0.25);
+    color: var(--sncf-red);
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .btn-delete-proc:hover { background: rgba(226,0,26,0.3); }
+
+  /* ===== STEP READ VIEW — TABLEAU ===== */
+  .steps-table-wrap {
+    padding: 0 16px 8px;
+    overflow-x: auto;
+  }
+
+  .steps-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .steps-table thead tr {
+    background: rgba(226,0,26,0.15);
+    border-bottom: 2px solid rgba(226,0,26,0.4);
+  }
+
+  .steps-table thead th {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--sncf-muted);
+    padding: 8px 10px;
+    text-align: left;
+  }
+
+  .steps-table thead th:first-child { width: 36px; text-align: center; }
+  .steps-table thead th.th-pieces { width: 160px; }
+
+  .steps-table tbody tr {
+    border-bottom: 1px solid var(--sncf-border);
+    transition: background 0.15s;
+  }
+
+  .steps-table tbody tr:last-child { border-bottom: none; }
+  .steps-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+  .steps-table td {
+    padding: 10px;
+    vertical-align: top;
+    color: var(--sncf-text);
+    line-height: 1.5;
+  }
+
+  .steps-table td:first-child {
+    text-align: center;
+    padding-top: 12px;
+  }
+
+  .step-num-badge {
+    background: var(--sncf-red);
+    color: white;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 12px;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  .step-table-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--sncf-text);
+    margin-bottom: 3px;
+  }
+
+  .step-table-desc {
+    font-size: 12px;
+    color: rgba(236,240,241,0.75);
+    line-height: 1.5;
+  }
+
+  .step-table-warning {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(245,166,35,0.1);
+    border: 1px solid rgba(245,166,35,0.3);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: var(--sncf-gold);
+    margin-top: 5px;
+  }
+
+  .pieces-tags { display: flex; flex-direction: column; gap: 4px; }
+
+  .ref-chip {
+    background: rgba(15,52,96,0.9);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #a8c8e8;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  /* Photo thumbnails in read view — clickable */
+  .step-photos-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .step-photos-row img {
+    width: 44px;
+    height: 44px;
+    border-radius: 3px;
+    object-fit: cover;
+    border: 1px solid var(--sncf-border);
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .step-photos-row img:hover {
+    transform: scale(1.08);
+    border-color: rgba(226,0,26,0.6);
+  }
+
+  /* ===== STEP EDITOR VIEW ===== */
+  .step-editor-view { padding: 0; }
+
+  .step-editor-header {
+    background: linear-gradient(135deg, var(--sncf-mid) 0%, #0a0a1a 100%);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--sncf-border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .step-editor-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ===== EDITOR TABLE ===== */
+  .editor-table-wrap {
+    padding: 16px;
+    overflow-x: auto;
+  }
+
+  .editor-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 560px;
+  }
+
+  .editor-table thead tr {
+    background: rgba(226,0,26,0.12);
+    border-bottom: 2px solid rgba(226,0,26,0.35);
+  }
+
+  .editor-table thead th {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--sncf-muted);
+    padding: 8px 10px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .editor-table thead th.col-num { width: 42px; text-align: center; }
+  .editor-table thead th.col-title { width: 180px; }
+  .editor-table thead th.col-desc { min-width: 200px; }
+  .editor-table thead th.col-pieces { width: 180px; }
+  .editor-table thead th.col-warn { width: 160px; }
+  .editor-table thead th.col-action { width: 42px; text-align: center; }
+
+  .editor-table tbody tr {
+    border-bottom: 1px solid var(--sncf-border);
+    vertical-align: top;
+    transition: background 0.15s;
+  }
+
+  .editor-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+  .editor-table td {
+    padding: 8px 10px;
+    vertical-align: top;
+  }
+
+  .editor-table td.col-num {
+    text-align: center;
+    padding-top: 12px;
+  }
+
+  /* Inputs inside table */
+  .tbl-input, .tbl-textarea {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--sncf-border);
+    border-radius: 5px;
+    color: var(--sncf-text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    padding: 7px 9px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+
+  .tbl-input:focus, .tbl-textarea:focus { border-color: rgba(226,0,26,0.5); }
+  .tbl-input::placeholder, .tbl-textarea::placeholder { color: var(--sncf-muted); font-size: 12px; }
+
+  .tbl-textarea {
+    resize: vertical;
+    min-height: 64px;
+    line-height: 1.4;
+  }
+
+  .tbl-warn-input {
+    background: rgba(245,166,35,0.06);
+    border: 1px solid rgba(245,166,35,0.2);
+    border-radius: 5px;
+    color: var(--sncf-gold);
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    padding: 7px 9px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+
+  .tbl-warn-input:focus { border-color: rgba(245,166,35,0.5); }
+  .tbl-warn-input::placeholder { color: rgba(245,166,35,0.4); font-size: 11px; }
+
+  /* Pieces inside table */
+  .tbl-pieces { display: flex; flex-direction: column; gap: 5px; }
+
+  .tbl-piece-row { display: flex; gap: 5px; align-items: center; }
+  .tbl-piece-row .tbl-input { font-size: 11px; padding: 5px 8px; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.3px; }
+
+  .tbl-piece-remove {
+    background: rgba(226,0,26,0.1);
+    border: 1px solid rgba(226,0,26,0.25);
+    color: var(--sncf-red);
+    padding: 4px 7px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1;
+    transition: all 0.15s;
+  }
+
+  .tbl-piece-remove:hover { background: rgba(226,0,26,0.25); }
+
+  .tbl-add-piece {
+    background: none;
+    border: 1px dashed rgba(255,255,255,0.15);
+    color: var(--sncf-muted);
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+  }
+
+  .tbl-add-piece:hover { border-color: rgba(226,0,26,0.3); color: var(--sncf-text); }
+
+  /* Delete row button */
+  .tbl-delete-row {
+    background: none;
+    border: none;
+    color: var(--sncf-muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.2s;
+    line-height: 1;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .tbl-delete-row:hover { color: var(--sncf-red); }
+
+  /* Add step row button */
+  .add-step-row-wrap { padding: 0 16px 16px; }
+
+  .add-step-row-btn {
+    background: rgba(226,0,26,0.08);
+    border: 2px dashed rgba(226,0,26,0.35);
+    color: var(--sncf-red);
+    padding: 12px;
+    border-radius: var(--radius);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .add-step-row-btn:hover { background: rgba(226,0,26,0.18); }
+
+  /* Bottom save bar */
+  .save-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, var(--sncf-mid) 80%, transparent);
+    padding: 16px 20px;
+    display: flex;
+    gap: 12px;
+    z-index: 90;
+  }
+
+  .btn-save {
+    flex: 1;
+    background: var(--sncf-red);
+    border: none;
+    color: white;
+    padding: 14px;
+    border-radius: var(--radius);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-save:hover { background: #c0001a; }
+  .btn-save:active { transform: scale(0.98); }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: var(--sncf-mid);
+    border: 1px solid var(--sncf-border);
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+
+  .modal-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    color: var(--sncf-text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .modal-title span { color: var(--sncf-red); }
+
+  .modal-fields { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+
+  .modal-actions { display: flex; gap: 10px; }
+
+  .btn-modal-cancel {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--sncf-border);
+    color: var(--sncf-muted);
+    padding: 12px;
+    border-radius: var(--radius);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-modal-cancel:hover { background: rgba(255,255,255,0.1); }
+
+  .btn-modal-confirm {
+    flex: 2;
+    background: var(--sncf-red);
+    border: none;
+    color: white;
+    padding: 12px;
+    border-radius: var(--radius);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-modal-confirm:hover { background: #c0001a; }
+
+  /* Confirm delete modal variant */
+  .modal.modal-danger { border-color: rgba(226,0,26,0.4); }
+  .modal-danger-body {
+    font-size: 14px;
+    color: rgba(236,240,241,0.8);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+  .modal-danger-body strong { color: var(--sncf-text); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--sncf-green);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 40px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 300;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--sncf-red); }
+
+  .scrollable { padding-bottom: 90px; }
+
+  .field-group { display: flex; flex-direction: column; gap: 6px; }
+
+  .field-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--sncf-muted); font-weight: 600; }
+
+  .field-input {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--sncf-border);
+    border-radius: 6px;
+    color: var(--sncf-text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+
+  .field-input:focus { border-color: rgba(226,0,26,0.5); }
+  .field-input::placeholder { color: var(--sncf-muted); }
+
+  .field-select {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--sncf-border);
+    border-radius: 6px;
+    color: var(--sncf-text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    width: 100%;
+    appearance: none;
+    transition: border-color 0.2s;
+  }
+
+  .field-select:focus { border-color: rgba(226,0,26,0.5); }
+  .field-select option { background: #1a1a2e; }
+
+  .urgency-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .urgency-tag.high { background: rgba(226,0,26,0.2); color: var(--sncf-red); border: 1px solid rgba(226,0,26,0.3); }
+  .urgency-tag.med { background: rgba(245,166,35,0.2); color: var(--sncf-gold); border: 1px solid rgba(245,166,35,0.3); }
+  .urgency-tag.low { background: rgba(39,174,96,0.2); color: var(--sncf-green); border: 1px solid rgba(39,174,96,0.3); }
+
+  .btn-edit-proc {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--sncf-border);
+    color: var(--sncf-muted);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin: 0 16px 16px;
+  }
+
+  .btn-edit-proc:hover { color: var(--sncf-text); border-color: rgba(255,255,255,0.25); }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--sncf-muted); }
+  .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state-text { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+  .empty-state-sub { font-size: 13px; margin-top: 6px; }
+
+  /* Photo zone inside editor table */
+  .tbl-photo-zone {
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 5px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    color: var(--sncf-muted);
+    font-size: 11px;
+  }
+
+  .tbl-photo-zone:hover { border-color: rgba(226,0,26,0.3); }
+
+  .tbl-photo-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .tbl-photo-previews { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+  .tbl-photo-thumb-wrap { position: relative; display: inline-block; }
+  .tbl-photo-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 3px;
+    object-fit: cover;
+    border: 1px solid var(--sncf-border);
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .tbl-photo-thumb:hover {
+    transform: scale(1.08);
+    border-color: rgba(226,0,26,0.5);
+  }
+  .tbl-photo-remove {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--sncf-red);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+    text-align: center;
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  /* Editor: photo column width */
+  .editor-table thead th.col-photo { width: 90px; }
+
+  /* ===== LIGHTBOX ===== */
+  .lightbox-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .lightbox-overlay.active { display: flex; }
+
+  .lightbox-img {
+    max-width: 100%;
+    max-height: 75vh;
+    border-radius: 8px;
+    object-fit: contain;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+    transition: opacity 0.2s;
+  }
+
+  .lightbox-close {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: rgba(226,0,26,0.9);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 510;
+    transition: background 0.2s;
+  }
+
+  .lightbox-close:hover { background: #c0001a; }
+
+  .lightbox-nav {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .lightbox-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .lightbox-btn:hover { background: rgba(255,255,255,0.2); }
+  .lightbox-btn:disabled { opacity: 0.3; cursor: default; }
+
+  .lightbox-counter {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 1px;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  /* ===== MODE EXÉCUTION PAS À PAS ===== */
+  .exec-view {
+    min-height: 100vh;
+    background: var(--sncf-dark);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .exec-header {
+    background: linear-gradient(135deg, var(--sncf-mid) 0%, #0a0a1a 100%);
+    border-bottom: 3px solid var(--sncf-red);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(226,0,26,0.3);
+  }
+
+  .exec-header-info { flex: 1; min-width: 0; }
+
+  .exec-proc-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 17px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .exec-module-name {
+    font-size: 11px;
+    color: var(--sncf-muted);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Progress bar */
+  .exec-progress-bar-wrap {
+    background: rgba(255,255,255,0.07);
+    border-radius: 4px;
+    height: 6px;
+    margin: 14px 20px 0;
+    overflow: hidden;
+  }
+
+  .exec-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--sncf-red), #ff4560);
+    border-radius: 4px;
+    transition: width 0.4s cubic-bezier(.4,0,.2,1);
+  }
+
+  .exec-progress-label {
+    padding: 6px 20px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .exec-step-counter {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    color: var(--sncf-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .exec-step-counter strong {
+    color: var(--sncf-red);
+    font-size: 16px;
+  }
+
+  .exec-pct {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    color: var(--sncf-muted);
+    letter-spacing: 1px;
+  }
+
+  /* Step card */
+  .exec-step-area {
+    flex: 1;
+    padding: 0 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .exec-step-card {
+    background: linear-gradient(135deg, rgba(15,52,96,0.45) 0%, rgba(15,52,96,0.15) 100%);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    overflow: hidden;
+    animation: execFadeIn 0.3s ease;
+  }
+
+  @keyframes execFadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .exec-step-card.done {
+    border-color: rgba(39,174,96,0.4);
+    background: linear-gradient(135deg, rgba(39,174,96,0.1) 0%, rgba(39,174,96,0.03) 100%);
+  }
+
+  .exec-card-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px 14px;
+  }
+
+  .exec-step-num {
+    background: var(--sncf-red);
+    color: white;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 20px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+
+  .exec-step-card.done .exec-step-num {
+    background: var(--sncf-green);
+  }
+
+  .exec-step-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+    flex: 1;
+  }
+
+  .exec-done-badge {
+    background: rgba(39,174,96,0.2);
+    border: 1px solid rgba(39,174,96,0.5);
+    color: var(--sncf-green);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    display: none;
+  }
+
+  .exec-step-card.done .exec-done-badge { display: block; }
+
+  .exec-step-desc {
+    padding: 0 20px 16px;
+    font-size: 15px;
+    color: rgba(236,240,241,0.88);
+    line-height: 1.65;
+  }
+
+  /* Warning block */
+  .exec-warning {
+    margin: 0 20px 16px;
+    background: rgba(245,166,35,0.1);
+    border: 1px solid rgba(245,166,35,0.4);
+    border-left: 4px solid var(--sncf-gold);
+    border-radius: 6px;
+    padding: 12px 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .exec-warning-icon { font-size: 18px; flex-shrink: 0; }
+
+  .exec-warning-text {
+    font-size: 13px;
+    color: var(--sncf-gold);
+    line-height: 1.5;
+  }
+
+  /* Pieces */
+  .exec-pieces {
+    margin: 0 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .exec-pieces-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--sncf-muted);
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .exec-pieces-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* Photos */
+  .exec-photos {
+    margin: 0 20px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .exec-photos img {
+    height: 70px;
+    width: 70px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--sncf-border);
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+
+  .exec-photos img:hover {
+    transform: scale(1.06);
+    border-color: rgba(226,0,26,0.6);
+  }
+
+  /* Checkbox */
+  .exec-check-area {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .exec-check-btn {
+    width: 100%;
+    background: rgba(226,0,26,0.1);
+    border: 2px solid rgba(226,0,26,0.4);
+    color: var(--sncf-red);
+    padding: 14px;
+    border-radius: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .exec-check-btn:hover:not(.done) {
+    background: rgba(226,0,26,0.22);
+  }
+
+  .exec-check-btn.done {
+    background: rgba(39,174,96,0.15);
+    border-color: rgba(39,174,96,0.5);
+    color: var(--sncf-green);
+    cursor: default;
+  }
+
+  /* Nav buttons */
+  .exec-nav {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, var(--sncf-dark) 70%, transparent);
+    padding: 16px 20px 20px;
+    display: flex;
+    gap: 12px;
+    z-index: 90;
+  }
+
+  .exec-nav-btn {
+    flex: 1;
+    padding: 15px;
+    border-radius: var(--radius);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+  }
+
+  .exec-nav-btn:active { transform: scale(0.97); }
+
+  .exec-nav-btn.prev {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid var(--sncf-border);
+    color: var(--sncf-muted);
+    flex: 0 0 56px;
+  }
+
+  .exec-nav-btn.prev:hover { background: rgba(255,255,255,0.14); color: var(--sncf-text); }
+  .exec-nav-btn.prev:disabled { opacity: 0.3; cursor: default; }
+
+  .exec-nav-btn.next {
+    background: var(--sncf-red);
+    color: white;
+  }
+
+  .exec-nav-btn.next:hover { background: #c0001a; }
+  .exec-nav-btn.next:disabled { background: rgba(255,255,255,0.07); border: 1px solid var(--sncf-border); color: var(--sncf-muted); cursor: default; }
+
+  .exec-nav-btn.finish {
+    background: var(--sncf-green);
+    color: white;
+  }
+
+  .exec-nav-btn.finish:hover { background: #1e8449; }
+
+  /* Completion screen */
+  .exec-complete {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+    animation: execFadeIn 0.5s ease;
+  }
+
+  .exec-complete-icon {
+    font-size: 72px;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 20px rgba(39,174,96,0.4));
+    animation: popIn 0.5s cubic-bezier(.18,.89,.32,1.28) both;
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.3); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+
+  .exec-complete-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--sncf-green);
+    margin-bottom: 8px;
+  }
+
+  .exec-complete-sub {
+    font-size: 14px;
+    color: var(--sncf-muted);
+    line-height: 1.6;
+    max-width: 280px;
+    margin: 0 auto 32px;
+  }
+
+  .exec-complete-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 36px;
+  }
+
+  .exec-complete-stat {
+    background: var(--sncf-card);
+    border: 1px solid var(--sncf-border);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    text-align: center;
+  }
+
+  .exec-complete-stat-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--sncf-green);
+  }
+
+  .exec-complete-stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--sncf-muted);
+    margin-top: 2px;
+  }
+
+  .exec-complete-actions {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  /* "Lancer" button on procedure */
+  .btn-exec-proc {
+    background: rgba(39,174,96,0.12);
+    border: 1px solid rgba(39,174,96,0.35);
+    color: var(--sncf-green);
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .btn-exec-proc:hover { background: rgba(39,174,96,0.25); }
+
+  /* ===== MODAL LANCEMENT EXÉCUTION ===== */
+  .modal-exec-launch .modal-title { color: var(--sncf-green); }
+  .modal-exec-launch .modal-title span { color: var(--sncf-green); }
+
+  /* ===== ANNOTATION PAR ÉTAPE ===== */
+  .exec-annotation-area {
+    padding: 0 20px 16px;
+  }
+
+  .exec-annotation-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--sncf-muted);
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .exec-annotation-textarea {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--sncf-border);
+    border-radius: 6px;
+    color: var(--sncf-text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+    width: 100%;
+    resize: none;
+    min-height: 72px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+  }
+
+  .exec-annotation-textarea:focus { border-color: rgba(245,166,35,0.5); }
+  .exec-annotation-textarea::placeholder { color: var(--sncf-muted); font-size: 12px; }
+
+  .exec-annotation-filled {
+    border-color: rgba(245,166,35,0.4) !important;
+    background: rgba(245,166,35,0.04) !important;
+  }
+
+  .exec-annot-badge {
+    background: rgba(245,166,35,0.2);
+    border: 1px solid rgba(245,166,35,0.4);
+    color: var(--sncf-gold);
+    border-radius: 10px;
+    font-size: 10px;
+    padding: 1px 6px;
+    font-weight: 700;
+  }
+
+  /* Engin info banner in exec */
+  .exec-engin-banner {
+    margin: 0 20px 14px;
+    background: rgba(15,52,96,0.6);
+    border: 1px solid rgba(93,173,226,0.3);
+    border-radius: 6px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: #5dade2;
+  }
+
+  .exec-engin-banner strong {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  /* ===== VUE TRAÇABILITÉ ===== */
+  .trace-view { padding: 0; }
+
+  .trace-header {
+    background: linear-gradient(135deg, var(--sncf-mid) 0%, #0a0a1a 100%);
+    padding: 20px;
+    border-bottom: 1px solid var(--sncf-border);
+  }
+
+  .trace-header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .trace-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    flex: 1;
+  }
+
+  .trace-subtitle {
+    font-size: 12px;
+    color: var(--sncf-muted);
+    margin-top: 2px;
+  }
+
+  .trace-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .trace-filter-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--sncf-border);
+    color: var(--sncf-muted);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .trace-filter-btn:hover { background: rgba(255,255,255,0.1); color: var(--sncf-text); }
+  .trace-filter-btn.active { background: rgba(39,174,96,0.18); border-color: rgba(39,174,96,0.45); color: var(--sncf-green); }
+
+  .trace-list { padding: 16px; }
+
+  .trace-card {
+    background: var(--sncf-card);
+    border: 1px solid var(--sncf-border);
+    border-left: 4px solid var(--sncf-green);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .trace-card:hover { border-color: rgba(39,174,96,0.5); }
+
+  .trace-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .trace-card-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .trace-card-info { flex: 1; min-width: 0; }
+
+  .trace-card-proc {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .trace-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .trace-meta-chip {
+    font-size: 11px;
+    color: var(--sncf-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .trace-engin-chip {
+    background: rgba(15,52,96,0.7);
+    border: 1px solid rgba(93,173,226,0.3);
+    color: #5dade2;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  .trace-card-chevron {
+    color: var(--sncf-muted);
+    font-size: 18px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .trace-card.open .trace-card-chevron { transform: rotate(90deg); }
+
+  .trace-card-body {
+    padding: 0 16px 16px;
+    display: none;
+    border-top: 1px solid var(--sncf-border);
+  }
+
+  .trace-card.open .trace-card-body { display: block; }
+
+  .trace-step-row {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .trace-step-row:last-child { border-bottom: none; }
+
+  .trace-step-num {
+    background: var(--sncf-green);
+    color: white;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 11px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .trace-step-content { flex: 1; }
+
+  .trace-step-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 3px;
+  }
+
+  .trace-step-annotation {
+    background: rgba(245,166,35,0.08);
+    border-left: 3px solid rgba(245,166,35,0.5);
+    border-radius: 0 4px 4px 0;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: rgba(245,166,35,0.9);
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+
+  .trace-card-actions {
+    display: flex;
+    gap: 8px;
+    padding-top: 12px;
+    margin-top: 4px;
+    border-top: 1px solid var(--sncf-border);
+  }
+
+  .btn-trace-delete {
+    background: rgba(226,0,26,0.1);
+    border: 1px solid rgba(226,0,26,0.25);
+    color: var(--sncf-red);
+    padding: 7px 14px;
+    border-radius: 5px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-trace-delete:hover { background: rgba(226,0,26,0.25); }
+
+  .trace-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--sncf-muted);
+  }
+
+  .trace-empty-icon { font-size: 52px; margin-bottom: 14px; }
+  .trace-empty-title { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
+  .trace-empty-sub { font-size: 13px; margin-top: 6px; }
+
+  /* Exec completion — save to trace button */
+  .btn-save-trace {
+    flex: 3;
+    background: var(--sncf-green);
+    border: none;
+    color: white;
+    padding: 15px;
+    border-radius: var(--radius);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+  }
+
+  .btn-save-trace:hover { background: #1e8449; }
+  .btn-save-trace:disabled { background: rgba(255,255,255,0.07); border: 1px solid var(--sncf-border); color: var(--sncf-muted); cursor: default; }
+
+  /* Traçabilité button in header */
+  .btn-trace-header {
+    background: rgba(39,174,96,0.12);
+    border: 1px solid rgba(39,174,96,0.3);
+    color: var(--sncf-green);
+  }
+
+  .btn-trace-header:hover { background: rgba(39,174,96,0.22) !important; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="sncf-logo">SNCF</div>
+    <div>
+      <div class="app-title">Maintenance Pro</div>
+      <div class="app-subtitle">Gestion des procédures</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn-header btn-trace-header" onclick="showView('trace')">📋 Traçabilité</button>
+        <button class="btn-header" onclick="exportData()" title="Exporter toutes mes données" style="background:rgba(39,174,96,0.15);border-color:rgba(39,174,96,0.4);color:#27AE60">💾 Exporter</button>
+        <button class="btn-header" onclick="document.getElementById('importFileInput').click()" title="Importer un backup" style="background:rgba(245,166,35,0.12);border-color:rgba(245,166,35,0.35);color:#F5A623">📂 Importer</button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
+    <button class="btn-header" onclick="openNewFolderModal()">📁 Dossier</button>
+    <button class="btn-header primary" onclick="openNewModuleModal()">＋ Module</button>
+  </div>
+</header>
+
+<!-- ====== VUE DASHBOARD ====== -->
+<div id="viewDashboard" class="view active">
+  <div class="dashboard scrollable">
+    <div class="stats-row">
+      <div class="stat-card red">
+        <div class="stat-number" id="statModules">0</div>
+        <div class="stat-label">Modules</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-number" id="statProcedures">0</div>
+        <div class="stat-label">Procédures</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-number" id="statSteps">0</div>
+        <div class="stat-label">Étapes</div>
+      </div>
+    </div>
+    <div class="dashboard-toolbar">
+      <span class="sort-label">Trier :</span>
+      <button class="sort-btn active" id="sortBtnName" onclick="setSort('name')">A → Z</button>
+      <button class="sort-btn" id="sortBtnStatus" onclick="setSort('status')">Statut</button>
+      <button class="sort-btn" id="sortBtnProcs" onclick="setSort('procs')">Nb. procédures</button>
+      <div class="toolbar-sep"></div>
+    </div>
+    <div id="foldersArea"></div>
+    <div class="section-title" id="sectionFreeModules">Modules sans dossier</div>
+    <div class="module-grid" id="moduleGrid"></div>
+    <div id="emptyModules" class="empty-state" style="display:none;">
+      <div class="empty-state-icon">🔧</div>
+      <div class="empty-state-text">Aucun module</div>
+      <div class="empty-state-sub">Appuyez sur « + Module » pour commencer</div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== VUE MODULE DETAIL ====== -->
+<div id="viewModule" class="view">
+  <div class="module-detail scrollable">
+    <div class="detail-header">
+      <div class="detail-header-top">
+        <button class="back-btn" onclick="showView('dashboard')">←</button>
+        <div style="flex:1;">
+          <div class="detail-module-name" id="detailModuleName">—</div>
+          <div style="font-size:12px;color:var(--sncf-muted);margin-top:2px;" id="detailModuleDesc">—</div>
+        </div>
+        <button class="btn-rename-detail" onclick="openRenameModuleModal()" title="Renommer ce module">
+          ✏️ Renommer
+        </button>
+        <button class="btn-rename-detail" onclick="openAssignFolderModal()" title="Déplacer dans un dossier" style="border-color:rgba(245,166,35,0.3);color:var(--sncf-gold);">
+          📁
+        </button>
+        <button class="btn-delete-module" onclick="confirmDeleteModule()" title="Supprimer ce module">
+          🗑 Supprimer
+        </button>
+      </div>
+      <button class="btn-header primary" onclick="openNewProcedureModal()" style="width:100%;justify-content:center;">
+        ＋ Nouvelle procédure
+      </button>
+    </div>
+    <div class="procedures-list" id="proceduresList"></div>
+    <div id="emptyProcedures" class="empty-state" style="display:none;">
+      <div class="empty-state-icon">📋</div>
+      <div class="empty-state-text">Aucune procédure</div>
+      <div class="empty-state-sub">Créez votre première procédure pour ce module</div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== VUE EDITEUR D'ETAPES ====== -->
+<div id="viewStepEditor" class="view">
+  <div class="step-editor-view scrollable">
+    <div class="step-editor-header">
+      <button class="back-btn" onclick="showView('module')">←</button>
+      <div>
+        <div class="step-editor-title" id="editorProcTitle">—</div>
+        <div style="font-size:11px;color:var(--sncf-muted);margin-top:2px;" id="editorModuleName">—</div>
+      </div>
+    </div>
+
+    <div class="editor-table-wrap">
+      <table class="editor-table">
+        <thead>
+          <tr>
+            <th class="col-num">#</th>
+            <th class="col-title">Titre étape</th>
+            <th class="col-desc">Description / Instruction</th>
+            <th class="col-pieces">🔩 Réf. pièces</th>
+            <th class="col-warn">⚠️ Avertissement</th>
+            <th class="col-photo">📷 Photos</th>
+            <th class="col-action"></th>
+          </tr>
+        </thead>
+        <tbody id="editorTableBody">
+          <!-- Dynamic rows -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="add-step-row-wrap">
+      <button class="add-step-row-btn" onclick="addNewStep()">
+        ＋ Ajouter une ligne / étape
+      </button>
+    </div>
+  </div>
+
+  <div class="save-bar">
+    <button class="btn-save" onclick="saveProcedure()">
+      ✓ Enregistrer la procédure
+    </button>
+  </div>
+</div>
+
+<!-- ====== MODAL NOUVEAU MODULE ====== -->
+<div class="modal-overlay" id="modalModule">
+  <div class="modal">
+    <div class="modal-title">🔧 <span>Nouveau</span> module</div>
+    <div class="modal-fields">
+      <div class="field-group">
+        <div class="field-label">Nom du module *</div>
+        <input type="text" class="field-input" id="newModuleName" placeholder="Ex: Boîte de vitesses — TGV 2N2">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Description</div>
+        <input type="text" class="field-input" id="newModuleDesc" placeholder="Ex: Transmission principale — rame duplex">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Icône</div>
+        <select class="field-select" id="newModuleIcon">
+          <option value="⚙️">⚙️ Mécanique</option>
+          <option value="⚡">⚡ Électrique</option>
+          <option value="🔧">🔧 Outillage général</option>
+          <option value="🛞">🛞 Bogies / Roues</option>
+          <option value="🌡️">🌡️ Thermique / Climatisation</option>
+          <option value="💨">💨 Pneumatique / Freinage</option>
+          <option value="🔌">🔌 Électronique</option>
+          <option value="🪛">🪛 Hydraulique</option>
+          <option value="📡">📡 Signalisation / Comm.</option>
+          <option value="🚂">🚂 Moteur traction</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Statut</div>
+        <select class="field-select" id="newModuleStatus">
+          <option value="ok">✅ Opérationnel</option>
+          <option value="warn">⚠️ Maintenance préventive</option>
+          <option value="crit">🔴 Intervention urgente</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('modalModule')">Annuler</button>
+      <button class="btn-modal-confirm" onclick="createModule()">Créer le module</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL NOUVELLE PROCEDURE ====== -->
+<div class="modal-overlay" id="modalProcedure">
+  <div class="modal">
+    <div class="modal-title">📋 <span>Nouvelle</span> procédure</div>
+    <div class="modal-fields">
+      <div class="field-group">
+        <div class="field-label">Titre de la procédure *</div>
+        <input type="text" class="field-input" id="newProcTitle" placeholder="Ex: Remplacement joint d'étanchéité">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Urgence</div>
+        <select class="field-select" id="newProcUrgency">
+          <option value="low">🟢 Planifiée / Préventive</option>
+          <option value="med">🟡 Prioritaire</option>
+          <option value="high">🔴 Urgente</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('modalProcedure')">Annuler</button>
+      <button class="btn-modal-confirm" onclick="createProcedure()">Créer et éditer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL CONFIRMATION SUPPRESSION MODULE ====== -->
+<div class="modal-overlay" id="modalDeleteModule">
+  <div class="modal modal-danger">
+    <div class="modal-title">🗑 <span>Supprimer</span> le module</div>
+    <div class="modal-danger-body" id="deleteModuleBody">
+      Êtes-vous sûr de vouloir supprimer ce module et <strong>toutes ses procédures</strong> ?
+      Cette action est irréversible.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('modalDeleteModule')">Annuler</button>
+      <button class="btn-modal-confirm" onclick="executeDeleteModule()">Supprimer définitivement</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL CONFIRMATION SUPPRESSION PROCEDURE ====== -->
+<div class="modal-overlay" id="modalDeleteProc">
+  <div class="modal modal-danger">
+    <div class="modal-title">🗑 <span>Supprimer</span> la procédure</div>
+    <div class="modal-danger-body" id="deleteProcBody">
+      Êtes-vous sûr de vouloir supprimer cette procédure et <strong>toutes ses étapes</strong> ?
+      Cette action est irréversible.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('modalDeleteProc')">Annuler</button>
+      <button class="btn-modal-confirm" onclick="executeDeleteProc()">Supprimer définitivement</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL RENOMMER MODULE ====== -->
+<div class="modal-overlay" id="modalRenameModule">
+  <div class="modal">
+    <div class="modal-title">✏️ <span>Renommer</span> le module</div>
+    <div class="modal-fields">
+      <div class="field-group">
+        <div class="field-label">Nouveau nom *</div>
+        <input type="text" class="field-input" id="renameModuleName" placeholder="Nom du module…">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Description</div>
+        <input type="text" class="field-input" id="renameModuleDesc" placeholder="Description courte…">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Icône</div>
+        <select class="field-select" id="renameModuleIcon">
+          <option value="⚙️">⚙️ Mécanique</option>
+          <option value="⚡">⚡ Électrique</option>
+          <option value="🔧">🔧 Outillage général</option>
+          <option value="🛞">🛞 Bogies / Roues</option>
+          <option value="🌡️">🌡️ Thermique / Climatisation</option>
+          <option value="💨">💨 Pneumatique / Freinage</option>
+          <option value="🔌">🔌 Électronique</option>
+          <option value="🪛">🪛 Hydraulique</option>
+          <option value="📡">📡 Signalisation / Comm.</option>
+          <option value="🚂">🚂 Moteur traction</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('modalRenameModule')">Annuler</button>
+      <button class="btn-modal-confirm" onclick="executeRenameModule()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL RENOMMER PROCEDURE ====== -->
+<div class="modal-overlay" id="modalRenameProc">
+  <div class="modal">
+    <div class="modal-title">✏️ <span>Renommer</span> la procédure</div>
+    <div class="modal-fields">
+      <div class="field-group">
+        <div class="field-label">Nouveau titre *</div>
+        <input type="text" class="field-input" id="renameProcTitle" placeholder="Titre de la procédure…">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Urgence</div>
+        <select class="field-select" id="renameProcUrgency">
+          <option value="low">🟢 Planifiée / Préventive</option>
+          <option value="med">🟡 Prioritaire</option>
+          <option value="high">🔴 Urgente</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('modalRenameProc')">Annuler</button>
+      <button class="btn-modal-confirm" onclick="executeRenameProc()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL NOUVEAU DOSSIER ====== -->
+<div class="modal-overlay" id="modalNewFolder">
+  <div class="modal">
+    <div class="modal-title">📁 <span>Nouveau</span> dossier</div>
+    <div class="modal-fields">
+      <div class="field-group">
+        <div class="field-label">Nom du dossier *</div>
+        <input type="text" class="field-input" id="newFolderName" placeholder="Ex: TGV Duplex, TER Auvergne…">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Couleur</div>
+        <select class="field-select" id="newFolderColor">
+          <option value="gold">🟡 Or (défaut)</option>
+          <option value="blue">🔵 Bleu</option>
+          <option value="green">🟢 Vert</option>
+          <option value="red">🔴 Rouge</option>
+          <option value="purple">🟣 Violet</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('modalNewFolder')">Annuler</button>
+      <button class="btn-modal-confirm" onclick="createFolder()">Créer le dossier</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL RENOMMER DOSSIER ====== -->
+<div class="modal-overlay" id="modalRenameFolder">
+  <div class="modal">
+    <div class="modal-title">✏️ <span>Renommer</span> le dossier</div>
+    <div class="modal-fields">
+      <div class="field-group">
+        <div class="field-label">Nouveau nom *</div>
+        <input type="text" class="field-input" id="renameFolderName" placeholder="Nom du dossier…">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Couleur</div>
+        <select class="field-select" id="renameFolderColor">
+          <option value="gold">🟡 Or (défaut)</option>
+          <option value="blue">🔵 Bleu</option>
+          <option value="green">🟢 Vert</option>
+          <option value="red">🔴 Rouge</option>
+          <option value="purple">🟣 Violet</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('modalRenameFolder')">Annuler</button>
+      <button class="btn-modal-confirm" onclick="executeRenameFolder()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL SUPPRIMER DOSSIER ====== -->
+<div class="modal-overlay" id="modalDeleteFolder">
+  <div class="modal modal-danger">
+    <div class="modal-title">🗑 <span>Supprimer</span> le dossier</div>
+    <div class="modal-danger-body" id="deleteFolderBody">
+      Les modules du dossier seront conservés (sans dossier).
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('modalDeleteFolder')">Annuler</button>
+      <button class="btn-modal-confirm" onclick="executeDeleteFolder()">Supprimer le dossier</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL AFFECTER MODULE À DOSSIER ====== -->
+<div class="modal-overlay" id="modalAssignFolder">
+  <div class="modal">
+    <div class="modal-title">📁 <span>Déplacer</span> vers…</div>
+    <div class="modal-fields">
+      <div class="field-group">
+        <div class="field-label">Choisir un dossier</div>
+        <select class="field-select" id="assignFolderSelect">
+          <option value="">— Sans dossier —</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('modalAssignFolder')">Annuler</button>
+      <button class="btn-modal-confirm" onclick="executeAssignFolder()">Déplacer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== LIGHTBOX ====== -->
+<div class="lightbox-overlay" id="lightbox" onclick="closeLightboxOnOverlay(event)">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img class="lightbox-img" id="lightboxImg" src="" alt="Photo agrandie">
+  <div class="lightbox-nav">
+    <button class="lightbox-btn" id="lightboxPrev" onclick="lightboxNav(-1)">‹ Préc.</button>
+    <span class="lightbox-counter" id="lightboxCounter"></span>
+    <button class="lightbox-btn" id="lightboxNext" onclick="lightboxNav(1)">Suiv. ›</button>
+  </div>
+</div>
+
+<!-- ====== MODAL LANCEMENT EXÉCUTION ====== -->
+<div class="modal-overlay" id="modalExecLaunch">
+  <div class="modal modal-exec-launch">
+    <div class="modal-title">▶ <span>Lancer</span> l'exécution</div>
+    <div class="modal-fields">
+      <div class="field-group">
+        <div class="field-label">📅 Date d'intervention *</div>
+        <input type="date" class="field-input" id="execLaunchDate">
+      </div>
+      <div class="field-group">
+        <div class="field-label">🚂 Numéro / Immatriculation de l'engin</div>
+        <input type="text" class="field-input" id="execLaunchEngin" placeholder="Ex: TGV-2N2-4721, Z21500-034…" autocomplete="off">
+      </div>
+      <div class="field-group">
+        <div class="field-label">👤 Technicien (optionnel)</div>
+        <input type="text" class="field-input" id="execLaunchTech" placeholder="Votre nom ou matricule…" autocomplete="off">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal('modalExecLaunch')">Annuler</button>
+      <button class="btn-modal-confirm" style="background:var(--sncf-green);border-color:var(--sncf-green)" onclick="confirmStartExec()">▶ Démarrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== VUE MODE EXÉCUTION PAS À PAS ====== -->
+<div id="viewExec" class="view">
+  <div class="exec-view" id="execViewInner">
+    <!-- Header -->
+    <div class="exec-header">
+      <button class="back-btn" onclick="exitExec()">←</button>
+      <div class="exec-header-info">
+        <div class="exec-proc-name" id="execProcName">—</div>
+        <div class="exec-module-name" id="execModuleName">—</div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="exec-progress-bar-wrap">
+      <div class="exec-progress-bar-fill" id="execProgressFill" style="width:0%"></div>
+    </div>
+    <div class="exec-progress-label">
+      <div class="exec-step-counter">Étape <strong id="execStepNum">1</strong> sur <strong id="execStepTotal">?</strong></div>
+      <div class="exec-pct" id="execPct">0%</div>
+    </div>
+
+    <!-- Step card area -->
+    <div class="exec-step-area" id="execStepArea">
+      <!-- Dynamic content -->
+    </div>
+
+    <!-- Completion screen (hidden initially) -->
+    <div class="exec-complete" id="execComplete" style="display:none">
+      <div class="exec-complete-icon">✅</div>
+      <div class="exec-complete-title">Procédure terminée !</div>
+      <div class="exec-complete-sub" id="execCompleteSubtitle">Toutes les étapes ont été validées.</div>
+      <div class="exec-complete-stats">
+        <div class="exec-complete-stat">
+          <div class="exec-complete-stat-num" id="execCompleteStepCount">0</div>
+          <div class="exec-complete-stat-label">Étapes</div>
+        </div>
+        <div class="exec-complete-stat">
+          <div class="exec-complete-stat-num" id="execCompleteAnnotCount">0</div>
+          <div class="exec-complete-stat-label">Annotations</div>
+        </div>
+        <div class="exec-complete-stat">
+          <div class="exec-complete-stat-num" id="execCompleteTime">0m</div>
+          <div class="exec-complete-stat-label">Durée</div>
+        </div>
+      </div>
+      <div class="exec-complete-actions">
+        <button class="exec-nav-btn prev" style="flex:1;font-size:14px" onclick="exitExec()">← Retour</button>
+        <button class="btn-save-trace" id="btnSaveTrace" onclick="saveToTrace()">📋 Enregistrer en traçabilité</button>
+      </div>
+      <div class="exec-complete-actions" id="btnGoTraceWrap" style="display:none;margin-top:8px">
+        <button class="exec-nav-btn next finish" style="flex:1;font-size:14px" onclick="showView('trace')">📋 Voir la traçabilité →</button>
+      </div>
+    </div>
+
+    <!-- Nav buttons -->
+    <div class="exec-nav" id="execNav">
+      <button class="exec-nav-btn prev" id="execBtnPrev" onclick="execNav(-1)" disabled>←</button>
+      <button class="exec-nav-btn next" id="execBtnNext" onclick="execNav(1)">Suivant →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== VUE TRAÇABILITÉ ====== -->
+<div id="viewTrace" class="view">
+  <div class="trace-view scrollable">
+    <div class="trace-header">
+      <div class="trace-header-top">
+        <button class="back-btn" onclick="showView('dashboard')">←</button>
+        <div style="flex:1">
+          <div class="trace-title">📋 Traçabilité</div>
+          <div class="trace-subtitle" id="traceSubtitle">Historique des interventions</div>
+        </div>
+      </div>
+      <div class="trace-filters">
+        <button class="trace-filter-btn active" id="traceFilterAll" onclick="setTraceFilter('all')">Toutes</button>
+        <button class="trace-filter-btn" id="traceFilterMonth" onclick="setTraceFilter('month')">Ce mois</button>
+        <button class="trace-filter-btn" id="traceFilterAnnot" onclick="setTraceFilter('annot')">Avec annotations</button>
+      </div>
+    </div>
+    <div class="trace-list" id="traceList">
+      <!-- Dynamic -->
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== DATA =====
+let data = { modules: [], folders: [] };
+let currentModuleId = null;
+let currentProcedureId = null;
+let pendingDeleteProcId = null;
+let pendingRenameProcId = null;
+let pendingDeleteFolderId = null;
+let pendingRenameFolderId = null;
+let currentSort = 'name'; // 'name' | 'status' | 'procs'
+
+function loadData() {
+  const stored = localStorage.getItem('sncf_maintenance_v3');
+  if (stored) {
+    try {
+      data = JSON.parse(stored);
+      if (!data.folders) data.folders = [];
+      if (!data.traces) data.traces = [];
+    } catch(e) {}
+  }
+}
+
+function saveData() {
+  localStorage.setItem('sncf_maintenance_v3', JSON.stringify(data));
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+// ===== VIEWS =====
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const map = { dashboard: 'viewDashboard', module: 'viewModule', editor: 'viewStepEditor', exec: 'viewExec', trace: 'viewTrace' };
+  const el = document.getElementById(map[name] || name);
+  if (el) el.classList.add('active');
+  window.scrollTo(0, 0);
+  if (name === 'trace') renderTraceList();
+}
+
+// ===== SORT =====
+function setSort(key) {
+  currentSort = key;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  const map = { name: 'sortBtnName', status: 'sortBtnStatus', procs: 'sortBtnProcs' };
+  const btn = document.getElementById(map[key]);
+  if (btn) btn.classList.add('active');
+  renderDashboard();
+}
+
+function sortModules(arr) {
+  const order = { crit: 0, warn: 1, ok: 2 };
+  return [...arr].sort((a, b) => {
+    if (currentSort === 'name') return a.name.localeCompare(b.name, 'fr');
+    if (currentSort === 'status') return (order[a.status] ?? 3) - (order[b.status] ?? 3);
+    if (currentSort === 'procs') return (b.procedures||[]).length - (a.procedures||[]).length;
+    return 0;
+  });
+}
+
+// ===== FOLDER COLORS =====
+const FOLDER_COLORS = {
+  gold:   { border: 'rgba(245,166,35,0.35)',  text: 'var(--sncf-gold)',   bg: 'rgba(245,166,35,0.08)' },
+  blue:   { border: 'rgba(52,152,219,0.35)',  text: '#5dade2',            bg: 'rgba(52,152,219,0.08)' },
+  green:  { border: 'rgba(39,174,96,0.35)',   text: 'var(--sncf-green)',  bg: 'rgba(39,174,96,0.08)'  },
+  red:    { border: 'rgba(226,0,26,0.35)',     text: 'var(--sncf-red)',    bg: 'rgba(226,0,26,0.08)'   },
+  purple: { border: 'rgba(155,89,182,0.35)',  text: '#bb8fce',            bg: 'rgba(155,89,182,0.08)' },
+};
+
+// ===== MODULES =====
+function renderDashboard() {
+  const allModules = data.modules || [];
+  const folders = data.folders || [];
+
+  // Stats
+  document.getElementById('statModules').textContent = allModules.length;
+  let totalProcs = 0, totalSteps = 0;
+  allModules.forEach(m => {
+    totalProcs += (m.procedures || []).length;
+    (m.procedures || []).forEach(p => { totalSteps += (p.steps || []).length; });
+  });
+  document.getElementById('statProcedures').textContent = totalProcs;
+  document.getElementById('statSteps').textContent = totalSteps;
+
+  // Folders area
+  const foldersArea = document.getElementById('foldersArea');
+  foldersArea.innerHTML = folders.map(f => {
+    const folderModules = sortModules(allModules.filter(m => m.folderId === f.id));
+    const col = FOLDER_COLORS[f.color || 'gold'];
+    const isOpen = f.open !== false; // default open
+    return `
+      <div class="folder-card ${isOpen ? 'open' : ''}" id="folder_${f.id}"
+           style="border-color:${col.border};background:linear-gradient(135deg,${col.bg} 0%,rgba(255,255,255,0.01) 100%)">
+        <div class="folder-header" onclick="toggleFolder('${f.id}')">
+          <div class="folder-icon">📁</div>
+          <div class="folder-name" style="color:${col.text}">${escHtml(f.name)}</div>
+          <div class="folder-meta">${folderModules.length} module(s)</div>
+          <div class="folder-actions" onclick="event.stopPropagation()">
+            <button class="btn-folder-action" onclick="openRenameFolderModal('${f.id}')" title="Renommer">✏️</button>
+            <button class="btn-folder-action danger" onclick="confirmDeleteFolder('${f.id}')" title="Supprimer le dossier">🗑</button>
+          </div>
+          <div class="folder-chevron" style="color:${col.text}">›</div>
+        </div>
+        <div class="folder-body">
+          ${folderModules.length ? `
+            <div class="module-grid" style="margin-bottom:0">
+              ${folderModules.map(m => moduleCardHtml(m)).join('')}
+            </div>
+          ` : `<div style="padding:8px 4px;font-size:12px;color:var(--sncf-muted);">Aucun module dans ce dossier.</div>`}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Free modules (no folder)
+  const freeModules = sortModules(allModules.filter(m => !m.folderId || !folders.find(f => f.id === m.folderId)));
+  const grid = document.getElementById('moduleGrid');
+  const empty = document.getElementById('emptyModules');
+  const sectionFree = document.getElementById('sectionFreeModules');
+
+  // Hide "sans dossier" label if no folders exist
+  sectionFree.style.display = folders.length ? 'flex' : 'none';
+
+  if (!allModules.length) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = freeModules.map(m => moduleCardHtml(m)).join('');
+}
+
+function moduleCardHtml(m) {
+  return `
+    <div class="module-card status-${m.status}" onclick="openModule('${m.id}')">
+      <div class="module-icon">${m.icon}</div>
+      <div class="module-name">${escHtml(m.name)}</div>
+      <div class="module-meta">
+        <span>${(m.procedures||[]).length} procédure(s)</span>
+        <span class="badge ${m.status}">${statusLabel(m.status)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function statusLabel(s) {
+  return { ok: 'OK', warn: 'Préventif', crit: 'Urgent' }[s] || s;
+}
+
+// ===== FOLDERS =====
+function toggleFolder(folderId) {
+  const folder = (data.folders || []).find(f => f.id === folderId);
+  if (!folder) return;
+  folder.open = folder.open === false ? true : false;
+  saveData();
+  const card = document.getElementById('folder_' + folderId);
+  if (card) card.classList.toggle('open', folder.open !== false);
+  const body = card ? card.querySelector('.folder-body') : null;
+  if (body) body.style.display = folder.open !== false ? 'block' : 'none';
+}
+
+function openNewFolderModal() {
+  document.getElementById('newFolderName').value = '';
+  document.getElementById('newFolderColor').value = 'gold';
+  document.getElementById('modalNewFolder').classList.add('active');
+  setTimeout(() => document.getElementById('newFolderName').focus(), 100);
+}
+
+function createFolder() {
+  const name = document.getElementById('newFolderName').value.trim();
+  if (!name) { alert('Veuillez saisir un nom.'); return; }
+  if (!data.folders) data.folders = [];
+  data.folders.push({
+    id: uid(),
+    name,
+    color: document.getElementById('newFolderColor').value,
+    open: true
+  });
+  saveData();
+  closeModal('modalNewFolder');
+  renderDashboard();
+  showToast('Dossier créé ✓');
+}
+
+function openRenameFolderModal(folderId) {
+  const folder = (data.folders || []).find(f => f.id === folderId);
+  if (!folder) return;
+  pendingRenameFolderId = folderId;
+  document.getElementById('renameFolderName').value = folder.name;
+  document.getElementById('renameFolderColor').value = folder.color || 'gold';
+  document.getElementById('modalRenameFolder').classList.add('active');
+  setTimeout(() => document.getElementById('renameFolderName').focus(), 100);
+}
+
+function executeRenameFolder() {
+  const newName = document.getElementById('renameFolderName').value.trim();
+  if (!newName) { alert('Veuillez saisir un nom.'); return; }
+  const folder = (data.folders || []).find(f => f.id === pendingRenameFolderId);
+  if (!folder) return;
+  folder.name = newName;
+  folder.color = document.getElementById('renameFolderColor').value;
+  pendingRenameFolderId = null;
+  saveData();
+  closeModal('modalRenameFolder');
+  renderDashboard();
+  showToast('Dossier renommé ✓');
+}
+
+function confirmDeleteFolder(folderId) {
+  const folder = (data.folders || []).find(f => f.id === folderId);
+  if (!folder) return;
+  pendingDeleteFolderId = folderId;
+  const count = (data.modules || []).filter(m => m.folderId === folderId).length;
+  document.getElementById('deleteFolderBody').innerHTML =
+    `Supprimer le dossier <strong>${escHtml(folder.name)}</strong> ?<br>
+     Les <strong>${count} module(s)</strong> qu'il contient seront conservés sans dossier.`;
+  document.getElementById('modalDeleteFolder').classList.add('active');
+}
+
+function executeDeleteFolder() {
+  // Unassign all modules from this folder
+  (data.modules || []).forEach(m => {
+    if (m.folderId === pendingDeleteFolderId) delete m.folderId;
+  });
+  data.folders = (data.folders || []).filter(f => f.id !== pendingDeleteFolderId);
+  pendingDeleteFolderId = null;
+  saveData();
+  closeModal('modalDeleteFolder');
+  renderDashboard();
+  showToast('Dossier supprimé');
+}
+
+// ===== ASSIGN MODULE TO FOLDER =====
+function openAssignFolderModal() {
+  const folders = data.folders || [];
+  const mod = (data.modules || []).find(m => m.id === currentModuleId);
+  const sel = document.getElementById('assignFolderSelect');
+  sel.innerHTML = '<option value="">— Sans dossier —</option>' +
+    folders.map(f => `<option value="${f.id}" ${mod && mod.folderId === f.id ? 'selected' : ''}>${escHtml(f.name)}</option>`).join('');
+  document.getElementById('modalAssignFolder').classList.add('active');
+}
+
+function executeAssignFolder() {
+  const folderId = document.getElementById('assignFolderSelect').value;
+  const mod = (data.modules || []).find(m => m.id === currentModuleId);
+  if (!mod) return;
+  if (folderId) mod.folderId = folderId;
+  else delete mod.folderId;
+  saveData();
+  closeModal('modalAssignFolder');
+  renderDashboard();
+  showToast('Module déplacé ✓');
+}
+
+function openNewModuleModal() {
+  document.getElementById('newModuleName').value = '';
+  document.getElementById('newModuleDesc').value = '';
+  document.getElementById('newModuleIcon').value = '⚙️';
+  document.getElementById('newModuleStatus').value = 'ok';
+  document.getElementById('modalModule').classList.add('active');
+  setTimeout(() => document.getElementById('newModuleName').focus(), 100);
+}
+
+function createModule() {
+  const name = document.getElementById('newModuleName').value.trim();
+  if (!name) { alert('Veuillez saisir un nom de module.'); return; }
+  const mod = {
+    id: uid(),
+    name,
+    desc: document.getElementById('newModuleDesc').value.trim(),
+    icon: document.getElementById('newModuleIcon').value,
+    status: document.getElementById('newModuleStatus').value,
+    procedures: []
+  };
+  data.modules.push(mod);
+  saveData();
+  closeModal('modalModule');
+  renderDashboard();
+  showToast('Module créé ✓');
+}
+
+// ===== RENAME MODULE =====
+function openRenameModuleModal() {
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  if (!mod) return;
+  document.getElementById('renameModuleName').value = mod.name;
+  document.getElementById('renameModuleDesc').value = mod.desc || '';
+  document.getElementById('renameModuleIcon').value = mod.icon || '⚙️';
+  document.getElementById('modalRenameModule').classList.add('active');
+  setTimeout(() => document.getElementById('renameModuleName').focus(), 100);
+}
+
+function executeRenameModule() {
+  const newName = document.getElementById('renameModuleName').value.trim();
+  if (!newName) { alert('Veuillez saisir un nom.'); return; }
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  if (!mod) return;
+  mod.name = newName;
+  mod.desc = document.getElementById('renameModuleDesc').value.trim();
+  mod.icon = document.getElementById('renameModuleIcon').value;
+  saveData();
+  closeModal('modalRenameModule');
+  // Refresh detail header
+  document.getElementById('detailModuleName').textContent = `${mod.icon} ${mod.name}`;
+  document.getElementById('detailModuleDesc').textContent = mod.desc || 'Aucune description';
+  renderDashboard();
+  showToast('Module renommé ✓');
+}
+
+// ===== RENAME PROCEDURE =====
+function openRenameProcModal(procId) {
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  if (!mod) return;
+  const proc = (mod.procedures || []).find(p => p.id === procId);
+  if (!proc) return;
+  pendingRenameProcId = procId;
+  document.getElementById('renameProcTitle').value = proc.title;
+  document.getElementById('renameProcUrgency').value = proc.urgency || 'low';
+  document.getElementById('modalRenameProc').classList.add('active');
+  setTimeout(() => document.getElementById('renameProcTitle').focus(), 100);
+}
+
+function executeRenameProc() {
+  const newTitle = document.getElementById('renameProcTitle').value.trim();
+  if (!newTitle) { alert('Veuillez saisir un titre.'); return; }
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  if (!mod) return;
+  const proc = (mod.procedures || []).find(p => p.id === pendingRenameProcId);
+  if (!proc) return;
+  proc.title = newTitle;
+  proc.urgency = document.getElementById('renameProcUrgency').value;
+  pendingRenameProcId = null;
+  saveData();
+  closeModal('modalRenameProc');
+  renderProceduresList(mod);
+  renderDashboard();
+  showToast('Procédure renommée ✓');
+}
+
+// ===== DELETE MODULE =====
+function confirmDeleteModule() {
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  if (!mod) return;
+  const nbProcs = (mod.procedures || []).length;
+  document.getElementById('deleteModuleBody').innerHTML =
+    `Supprimer le module <strong>${escHtml(mod.icon + ' ' + mod.name)}</strong> et ses <strong>${nbProcs} procédure(s)</strong> ? Cette action est <strong>irréversible</strong>.`;
+  document.getElementById('modalDeleteModule').classList.add('active');
+}
+
+function executeDeleteModule() {
+  data.modules = data.modules.filter(m => m.id !== currentModuleId);
+  saveData();
+  closeModal('modalDeleteModule');
+  renderDashboard();
+  showToast('Module supprimé');
+  showView('dashboard');
+}
+
+// ===== MODULE DETAIL =====
+function openModule(moduleId) {
+  currentModuleId = moduleId;
+  const mod = data.modules.find(m => m.id === moduleId);
+  if (!mod) return;
+  document.getElementById('detailModuleName').textContent = `${mod.icon} ${mod.name}`;
+  document.getElementById('detailModuleDesc').textContent = mod.desc || 'Aucune description';
+  renderProceduresList(mod);
+  showView('module');
+}
+
+function renderProceduresList(mod) {
+  const list = document.getElementById('proceduresList');
+  const empty = document.getElementById('emptyProcedures');
+  const procs = mod.procedures || [];
+  if (!procs.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const urgLabel = { low: 'Planifiée', med: 'Prioritaire', high: 'Urgente' };
+
+  list.innerHTML = procs.map((p, idx) => {
+    const steps = p.steps || [];
+    return `
+      <div class="procedure-item" id="proc_${p.id}">
+        <div class="procedure-header">
+          <div class="proc-header-clickable" onclick="toggleProcedure('${p.id}')">
+            <div class="proc-number">${idx + 1}</div>
+            <div class="proc-info">
+              <div class="proc-title">${escHtml(p.title)}</div>
+              <div class="proc-steps-count">${steps.length} étape(s) · <span class="urgency-tag ${p.urgency||'low'}">${urgLabel[p.urgency||'low']}</span></div>
+            </div>
+            <div class="proc-chevron">›</div>
+          </div>
+          <button class="btn-exec-proc" onclick="startExec('${p.id}')" title="Lancer l'exécution pas à pas">▶ Lancer</button>
+          <button class="btn-rename-proc" onclick="openRenameProcModal('${p.id}')" title="Renommer cette procédure">✏️</button>
+          <button class="btn-delete-proc" onclick="confirmDeleteProc('${p.id}')" title="Supprimer cette procédure">🗑</button>
+        </div>
+        <div class="proc-expanded" id="procExp_${p.id}" style="display:none;">
+          ${steps.length ? renderStepsTable(steps) : '<div style="padding:12px 16px;font-size:13px;color:var(--sncf-muted);">Aucune étape définie.</div>'}
+          <button class="btn-edit-proc" onclick="openEditor('${p.id}')">✏️ Modifier les étapes</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== DELETE PROCEDURE =====
+function confirmDeleteProc(procId) {
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  if (!mod) return;
+  const proc = (mod.procedures || []).find(p => p.id === procId);
+  if (!proc) return;
+  pendingDeleteProcId = procId;
+  const nbSteps = (proc.steps || []).length;
+  document.getElementById('deleteProcBody').innerHTML =
+    `Supprimer la procédure <strong>${escHtml(proc.title)}</strong> et ses <strong>${nbSteps} étape(s)</strong> ? Cette action est <strong>irréversible</strong>.`;
+  document.getElementById('modalDeleteProc').classList.add('active');
+}
+
+function executeDeleteProc() {
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  if (!mod) return;
+  mod.procedures = (mod.procedures || []).filter(p => p.id !== pendingDeleteProcId);
+  pendingDeleteProcId = null;
+  saveData();
+  closeModal('modalDeleteProc');
+  renderProceduresList(mod);
+  renderDashboard();
+  showToast('Procédure supprimée');
+}
+
+// ===== RENDER STEPS AS TABLE (lecture) =====
+function renderStepsTable(steps) {
+  const hasPieces = steps.some(s => s.pieces && s.pieces.filter(p=>p).length);
+  const hasWarning = steps.some(s => s.warning);
+  const hasPhotos = steps.some(s => s.photos && s.photos.length);
+
+  // Collect all photos from all steps for lightbox gallery (scoped to this table render)
+  const allPhotos = [];
+  steps.forEach((s, si) => {
+    (s.photos||[]).forEach((ph, pi) => {
+      allPhotos.push({ src: ph, stepIdx: si, photoIdx: pi });
+    });
+  });
+
+  const allPhotosJson = escAttr(JSON.stringify(allPhotos));
+
+  return `
+    <div class="steps-table-wrap">
+      <table class="steps-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Étape</th>
+            <th>Description</th>
+            ${hasPieces ? '<th class="th-pieces">🔩 Réf. pièces</th>' : ''}
+            ${hasWarning ? '<th>⚠️ Avertissement</th>' : ''}
+            ${hasPhotos ? '<th>📷</th>' : ''}
+          </tr>
+        </thead>
+        <tbody>
+          ${steps.map((s, i) => {
+            let photoGlobalIdx = 0;
+            steps.slice(0, i).forEach(prev => { photoGlobalIdx += (prev.photos||[]).length; });
+            return `
+            <tr>
+              <td><span class="step-num-badge">${i+1}</span></td>
+              <td>
+                <div class="step-table-title">${escHtml(s.label || 'Étape ' + (i+1))}</div>
+              </td>
+              <td>
+                <div class="step-table-desc">${escHtml(s.description || '—')}</div>
+              </td>
+              ${hasPieces ? `
+                <td>
+                  <div class="pieces-tags">
+                    ${(s.pieces||[]).filter(p=>p).map(p=>`<span class="ref-chip">🔩 ${escHtml(p)}</span>`).join('') || '<span style="color:var(--sncf-muted);font-size:11px;">—</span>'}
+                  </div>
+                </td>
+              ` : ''}
+              ${hasWarning ? `
+                <td>
+                  ${s.warning ? `<span class="step-table-warning">⚠️ ${escHtml(s.warning)}</span>` : '<span style="color:var(--sncf-muted);font-size:11px;">—</span>'}
+                </td>
+              ` : ''}
+              ${hasPhotos ? `
+                <td>
+                  ${(s.photos && s.photos.length) ? `
+                    <div class="step-photos-row">${s.photos.map((ph, pi) => `<img src="${ph}" alt="photo" onclick="openLightbox(${photoGlobalIdx + pi}, ${JSON.stringify(allPhotos).replace(/"/g,'&quot;')})">`).join('')}</div>
+                  ` : '<span style="color:var(--sncf-muted);font-size:11px;">—</span>'}
+                </td>
+              ` : ''}
+            </tr>
+          `}).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function toggleProcedure(procId) {
+  const item = document.getElementById('proc_' + procId);
+  const exp = document.getElementById('procExp_' + procId);
+  const open = exp.style.display !== 'none';
+  exp.style.display = open ? 'none' : 'block';
+  item.classList.toggle('open', !open);
+}
+
+function openNewProcedureModal() {
+  document.getElementById('newProcTitle').value = '';
+  document.getElementById('newProcUrgency').value = 'low';
+  document.getElementById('modalProcedure').classList.add('active');
+  setTimeout(() => document.getElementById('newProcTitle').focus(), 100);
+}
+
+function createProcedure() {
+  const title = document.getElementById('newProcTitle').value.trim();
+  if (!title) { alert('Veuillez saisir un titre.'); return; }
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  if (!mod) return;
+  const proc = { id: uid(), title, urgency: document.getElementById('newProcUrgency').value, steps: [] };
+  mod.procedures.push(proc);
+  saveData();
+  closeModal('modalProcedure');
+  openEditor(proc.id);
+}
+
+// ===== STEP EDITOR (TABLE) =====
+let editorSteps = [];
+
+function openEditor(procId) {
+  currentProcedureId = procId;
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  const proc = mod.procedures.find(p => p.id === procId);
+  if (!proc) return;
+
+  document.getElementById('editorProcTitle').textContent = proc.title;
+  document.getElementById('editorModuleName').textContent = `${mod.icon} ${mod.name}`;
+
+  editorSteps = (proc.steps || []).map(s => ({
+    ...s,
+    pieces: [...(s.pieces||['']).filter(()=>true)],
+    photos: [...(s.photos||[])]
+  }));
+
+  if (!editorSteps.length) editorSteps.push(newStepObj());
+  editorSteps.forEach(s => { if (!s.pieces.length) s.pieces = ['']; });
+
+  renderEditorTable();
+  showView('editor');
+}
+
+function newStepObj() {
+  return { id: uid(), label: '', description: '', pieces: [''], warning: '', photos: [] };
+}
+
+function addNewStep() {
+  editorSteps.push(newStepObj());
+  renderEditorTable();
+  setTimeout(() => {
+    const rows = document.querySelectorAll('#editorTableBody tr');
+    const last = rows[rows.length - 1];
+    if (last) last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+}
+
+function deleteStep(idx) {
+  if (editorSteps.length <= 1) { showToast('Au moins 1 étape requise', true); return; }
+  editorSteps.splice(idx, 1);
+  renderEditorTable();
+}
+
+function renderEditorTable() {
+  const tbody = document.getElementById('editorTableBody');
+  tbody.innerHTML = editorSteps.map((s, i) => `
+    <tr id="stepRow_${i}">
+      <td class="col-num">
+        <span class="step-num-badge">${i + 1}</span>
+      </td>
+      <td>
+        <input
+          type="text"
+          class="tbl-input"
+          placeholder="Titre de l'étape…"
+          value="${escAttr(s.label)}"
+          oninput="editorSteps[${i}].label = this.value"
+        >
+      </td>
+      <td>
+        <textarea
+          class="tbl-textarea"
+          placeholder="Actions à réaliser, précautions…"
+          oninput="editorSteps[${i}].description = this.value"
+        >${escHtml(s.description)}</textarea>
+      </td>
+      <td>
+        <div class="tbl-pieces" id="tblPieces_${i}">
+          ${(s.pieces||['']).map((p, pi) => `
+            <div class="tbl-piece-row">
+              <input
+                type="text"
+                class="tbl-input"
+                placeholder="Ex: 3482-TGV-JOINT"
+                value="${escAttr(p)}"
+                oninput="editorSteps[${i}].pieces[${pi}] = this.value"
+              >
+              <button class="tbl-piece-remove" onclick="removePiece(${i}, ${pi})">✕</button>
+            </div>
+          `).join('')}
+        </div>
+        <button class="tbl-add-piece" onclick="addPiece(${i})">＋ Ajouter une réf.</button>
+      </td>
+      <td>
+        <input
+          type="text"
+          class="tbl-warn-input"
+          placeholder="Ex: Couper l'alimentation"
+          value="${escAttr(s.warning)}"
+          oninput="editorSteps[${i}].warning = this.value"
+        >
+      </td>
+      <td>
+        <div class="tbl-photo-zone">
+          <input type="file" accept="image/*" multiple onchange="handlePhotos(${i}, event)">
+          <span>📷</span>
+          <span>Ajouter</span>
+        </div>
+        <div class="tbl-photo-previews" id="tblPhotos_${i}">
+          ${s.photos.map((ph, pi) => `
+            <div class="tbl-photo-thumb-wrap">
+              <img class="tbl-photo-thumb" src="${ph}" alt="photo ${pi+1}" onclick="openLightboxEditor(${i}, ${pi})">
+              <button class="tbl-photo-remove" onclick="removePhoto(${i}, ${pi})">✕</button>
+            </div>
+          `).join('')}
+        </div>
+      </td>
+      <td>
+        <button class="tbl-delete-row" onclick="deleteStep(${i})" title="Supprimer cette ligne">✕</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function addPiece(stepIdx) {
+  editorSteps[stepIdx].pieces.push('');
+  renderEditorTable();
+  setTimeout(() => {
+    const rows = document.querySelectorAll(`#tblPieces_${stepIdx} .tbl-piece-row`);
+    const last = rows[rows.length - 1];
+    if (last) last.querySelector('input').focus();
+  }, 50);
+}
+
+function removePiece(stepIdx, pieceIdx) {
+  editorSteps[stepIdx].pieces.splice(pieceIdx, 1);
+  if (!editorSteps[stepIdx].pieces.length) editorSteps[stepIdx].pieces = [''];
+  renderEditorTable();
+}
+
+function handlePhotos(stepIdx, event) {
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      editorSteps[stepIdx].photos.push(e.target.result);
+      updatePhotoPreview(stepIdx);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removePhoto(stepIdx, photoIdx) {
+  editorSteps[stepIdx].photos.splice(photoIdx, 1);
+  updatePhotoPreview(stepIdx);
+}
+
+function updatePhotoPreview(stepIdx) {
+  const container = document.getElementById(`tblPhotos_${stepIdx}`);
+  if (!container) return;
+  container.innerHTML = editorSteps[stepIdx].photos.map((ph, pi) => `
+    <div class="tbl-photo-thumb-wrap">
+      <img class="tbl-photo-thumb" src="${ph}" alt="photo ${pi+1}" onclick="openLightboxEditor(${stepIdx}, ${pi})">
+      <button class="tbl-photo-remove" onclick="removePhoto(${stepIdx}, ${pi})">✕</button>
+    </div>
+  `).join('');
+}
+
+function saveProcedure() {
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  const proc = mod.procedures.find(p => p.id === currentProcedureId);
+  if (!proc) return;
+  proc.steps = editorSteps.map(s => ({
+    ...s,
+    pieces: (s.pieces || []).filter(p => p.trim() !== '')
+  }));
+  saveData();
+  showToast('Procédure enregistrée ✓');
+  setTimeout(() => {
+    renderProceduresList(mod);
+    renderDashboard();
+    showView('module');
+  }, 800);
+}
+
+// ===== MODE EXÉCUTION PAS À PAS =====
+let execSteps = [];
+let execCurrentIdx = 0;
+let execChecked = [];
+let execAnnotations = []; // annotation string per step
+let execProcedureId = null;
+let execStartTime = null;
+let execLaunchDate = '';
+let execLaunchEngin = '';
+let execLaunchTech = '';
+let execAlreadySaved = false;
+
+// Step 1 — show launch modal
+function startExec(procId) {
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  if (!mod) return;
+  const proc = (mod.procedures || []).find(p => p.id === procId);
+  if (!proc || !proc.steps || !proc.steps.length) {
+    showToast('Aucune étape dans cette procédure', true);
+    return;
+  }
+
+  execProcedureId = procId;
+
+  // Pre-fill date with today
+  const today = new Date();
+  const iso = today.toISOString().split('T')[0];
+  document.getElementById('execLaunchDate').value = iso;
+  document.getElementById('execLaunchEngin').value = '';
+  document.getElementById('execLaunchTech').value = '';
+  document.getElementById('modalExecLaunch').classList.add('active');
+  setTimeout(() => document.getElementById('execLaunchEngin').focus(), 150);
+}
+
+// Step 2 — confirmed from modal
+function confirmStartExec() {
+  const dateVal = document.getElementById('execLaunchDate').value;
+  if (!dateVal) { showToast('Veuillez saisir une date', true); return; }
+
+  execLaunchDate = dateVal;
+  execLaunchEngin = document.getElementById('execLaunchEngin').value.trim();
+  execLaunchTech = document.getElementById('execLaunchTech').value.trim();
+  closeModal('modalExecLaunch');
+
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  const proc = (mod.procedures || []).find(p => p.id === execProcedureId);
+
+  execSteps = proc.steps;
+  execCurrentIdx = 0;
+  execChecked = new Array(execSteps.length).fill(false);
+  execAnnotations = new Array(execSteps.length).fill('');
+  execStartTime = Date.now();
+  execAlreadySaved = false;
+
+  document.getElementById('execProcName').textContent = proc.title;
+  document.getElementById('execModuleName').textContent = `${mod.icon} ${mod.name}`;
+  document.getElementById('execStepTotal').textContent = execSteps.length;
+  document.getElementById('execCompleteStepCount').textContent = execSteps.length;
+
+  document.getElementById('execComplete').style.display = 'none';
+  document.getElementById('execStepArea').style.display = 'flex';
+  document.getElementById('execNav').style.display = 'flex';
+
+  renderExecStep();
+  showView('exec');
+}
+
+function renderExecStep() {
+  const step = execSteps[execCurrentIdx];
+  const isDone = execChecked[execCurrentIdx];
+  const total = execSteps.length;
+  const completedCount = execChecked.filter(Boolean).length;
+
+  // Progress
+  const pct = Math.round((completedCount / total) * 100);
+  document.getElementById('execProgressFill').style.width = pct + '%';
+  document.getElementById('execStepNum').textContent = execCurrentIdx + 1;
+  document.getElementById('execPct').textContent = pct + '%';
+
+  // Nav buttons
+  const btnPrev = document.getElementById('execBtnPrev');
+  const btnNext = document.getElementById('execBtnNext');
+  btnPrev.disabled = execCurrentIdx === 0;
+
+  const isLast = execCurrentIdx === total - 1;
+  if (isLast) {
+    btnNext.textContent = '✓ Terminer';
+    btnNext.className = 'exec-nav-btn next' + (execChecked.every(Boolean) ? ' finish' : '');
+    btnNext.disabled = !execChecked.every(Boolean);
+  } else {
+    btnNext.textContent = 'Suivant →';
+    btnNext.className = 'exec-nav-btn next';
+    btnNext.disabled = false;
+  }
+
+  // Collect all photos for lightbox
+  const allPhotos = [];
+  execSteps.forEach(s => (s.photos||[]).forEach(ph => allPhotos.push({ src: ph })));
+  let photoOffset = 0;
+  for (let i = 0; i < execCurrentIdx; i++) photoOffset += (execSteps[i].photos||[]).length;
+
+  const pieces = (step.pieces||[]).filter(p => p.trim());
+  const photos = step.photos || [];
+  const annotation = execAnnotations[execCurrentIdx] || '';
+
+  const enginBanner = execLaunchEngin ? `
+    <div class="exec-engin-banner">
+      🚂 <strong>${escHtml(execLaunchEngin)}</strong>
+      <span style="color:var(--sncf-muted);margin-left:auto;font-size:11px;">${execLaunchDate} ${execLaunchTech ? '· ' + escHtml(execLaunchTech) : ''}</span>
+    </div>
+  ` : '';
+
+  const piecesHtml = pieces.length ? `
+    <div class="exec-pieces">
+      <div class="exec-pieces-title">🔩 Pièces / Références</div>
+      <div class="exec-pieces-row">
+        ${pieces.map(p => `<span class="ref-chip">🔩 ${escHtml(p)}</span>`).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  const warningHtml = step.warning ? `
+    <div class="exec-warning">
+      <div class="exec-warning-icon">⚠️</div>
+      <div class="exec-warning-text">${escHtml(step.warning)}</div>
+    </div>
+  ` : '';
+
+  const photosHtml = photos.length ? `
+    <div class="exec-photos">
+      ${photos.map((ph, pi) => `<img src="${ph}" alt="photo ${pi+1}" onclick="openLightbox(${photoOffset + pi}, ${JSON.stringify(allPhotos).replace(/"/g,'&quot;')})">`).join('')}
+    </div>
+  ` : '';
+
+  const annotHtml = `
+    <div class="exec-annotation-area">
+      <div class="exec-annotation-label">
+        📝 Défaut / Observation / Modification
+        ${annotation ? '<span class="exec-annot-badge">✎ Note ajoutée</span>' : ''}
+      </div>
+      <textarea
+        class="exec-annotation-textarea ${annotation ? 'exec-annotation-filled' : ''}"
+        id="execAnnotTA"
+        placeholder="Ex : Jeu anormal détecté sur boulon 3, semelle remplacée par réf. SEMELLE-B, aucune anomalie…"
+        oninput="execAnnotations[${execCurrentIdx}] = this.value; updateAnnotBadge(this)"
+      >${escHtml(annotation)}</textarea>
+    </div>
+  `;
+
+  const checkBtnHtml = `
+    <div class="exec-check-area">
+      <button class="exec-check-btn ${isDone ? 'done' : ''}" id="execCheckBtn" onclick="toggleExecCheck()">
+        ${isDone ? '✅ Étape validée' : '☐ Valider cette étape'}
+      </button>
+    </div>
+  `;
+
+  document.getElementById('execStepArea').innerHTML = `
+    <div class="exec-step-card ${isDone ? 'done' : ''}">
+      <div class="exec-card-top">
+        <div class="exec-step-num">${isDone ? '✓' : execCurrentIdx + 1}</div>
+        <div class="exec-step-label">${escHtml(step.label || 'Étape ' + (execCurrentIdx + 1))}</div>
+        <div class="exec-done-badge">✓ Fait</div>
+      </div>
+      ${enginBanner}
+      ${step.description ? `<div class="exec-step-desc">${escHtml(step.description)}</div>` : ''}
+      ${warningHtml}
+      ${piecesHtml}
+      ${photosHtml}
+      ${annotHtml}
+      ${checkBtnHtml}
+    </div>
+  `;
+}
+
+function updateAnnotBadge(ta) {
+  const label = ta.closest('.exec-annotation-area').querySelector('.exec-annotation-label');
+  const hasVal = ta.value.trim().length > 0;
+  let badge = label.querySelector('.exec-annot-badge');
+  if (hasVal && !badge) {
+    badge = document.createElement('span');
+    badge.className = 'exec-annot-badge';
+    badge.textContent = '✎ Note ajoutée';
+    label.appendChild(badge);
+  } else if (!hasVal && badge) {
+    badge.remove();
+  }
+  ta.classList.toggle('exec-annotation-filled', hasVal);
+}
+
+function toggleExecCheck() {
+  // Save current annotation value before re-render
+  const ta = document.getElementById('execAnnotTA');
+  if (ta) execAnnotations[execCurrentIdx] = ta.value;
+
+  execChecked[execCurrentIdx] = !execChecked[execCurrentIdx];
+  renderExecStep();
+
+  // Auto-advance si coché et pas dernier
+  if (execChecked[execCurrentIdx] && execCurrentIdx < execSteps.length - 1) {
+    setTimeout(() => {
+      execCurrentIdx++;
+      renderExecStep();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 500);
+  }
+}
+
+function execNav(dir) {
+  // Save current annotation value before navigating
+  const ta = document.getElementById('execAnnotTA');
+  if (ta) execAnnotations[execCurrentIdx] = ta.value;
+
+  // Si on est sur le dernier et tout est coché → fin (AVANT le check de bornes)
+  if (dir === 1 && execCurrentIdx === execSteps.length - 1 && execChecked.every(Boolean)) {
+    showExecComplete();
+    return;
+  }
+
+  const newIdx = execCurrentIdx + dir;
+  if (newIdx < 0 || newIdx >= execSteps.length) return;
+
+  execCurrentIdx = newIdx;
+  renderExecStep();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showExecComplete() {
+  // Save current annotation
+  const ta = document.getElementById('execAnnotTA');
+  if (ta) execAnnotations[execCurrentIdx] = ta.value;
+
+  const elapsed = Math.round((Date.now() - execStartTime) / 1000);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const timeStr = mins > 0 ? `${mins}m${secs > 0 ? secs + 's' : ''}` : `${secs}s`;
+  document.getElementById('execCompleteTime').textContent = timeStr;
+
+  const annotCount = execAnnotations.filter(a => a && a.trim()).length;
+  document.getElementById('execCompleteAnnotCount').textContent = annotCount;
+
+  const proc = (() => {
+    const mod = data.modules.find(m => m.id === currentModuleId);
+    return mod ? (mod.procedures||[]).find(p => p.id === execProcedureId) : null;
+  })();
+  if (proc) {
+    document.getElementById('execCompleteSubtitle').textContent =
+      `"${proc.title}"${execLaunchEngin ? ' · ' + execLaunchEngin : ''} — ${execSteps.length} étape(s) validée(s).`;
+  }
+
+  document.getElementById('execStepArea').style.display = 'none';
+  document.getElementById('execNav').style.display = 'none';
+  document.getElementById('execComplete').style.display = 'flex';
+  document.getElementById('execProgressFill').style.width = '100%';
+  document.getElementById('execPct').textContent = '100%';
+  document.getElementById('btnSaveTrace').disabled = execAlreadySaved;
+  if (execAlreadySaved) document.getElementById('btnSaveTrace').textContent = '✓ Déjà enregistré';
+  const goWrap = document.getElementById('btnGoTraceWrap');
+  if (goWrap) goWrap.style.display = execAlreadySaved ? 'flex' : 'none';
+
+  showToast('Procédure terminée ✓');
+}
+
+function saveToTrace() {
+  if (execAlreadySaved) return;
+  const mod = data.modules.find(m => m.id === currentModuleId);
+  const proc = mod ? (mod.procedures||[]).find(p => p.id === execProcedureId) : null;
+  if (!proc) { showToast('Erreur : procédure introuvable', true); return; }
+
+  const elapsed = Math.round((Date.now() - execStartTime) / 1000);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const timeStr = mins > 0 ? `${mins}m${secs > 0 ? secs + 's' : ''}` : `${secs}s`;
+
+  if (!data.traces) data.traces = [];
+  data.traces.unshift({
+    id: uid(),
+    date: execLaunchDate,
+    engin: execLaunchEngin,
+    tech: execLaunchTech,
+    procTitle: proc.title,
+    moduleName: mod.name,
+    moduleIcon: mod.icon,
+    duration: timeStr,
+    stepCount: execSteps.length,
+    steps: execSteps.map((s, i) => ({
+      label: s.label || ('Étape ' + (i + 1)),
+      annotation: execAnnotations[i] || ''
+    }))
+  });
+
+  saveData();
+  execAlreadySaved = true;
+  document.getElementById('btnSaveTrace').disabled = true;
+  document.getElementById('btnSaveTrace').textContent = '✓ Enregistré en traçabilité';
+  const wrap = document.getElementById('btnGoTraceWrap');
+  if (wrap) wrap.style.display = 'flex';
+  showToast('Intervention enregistrée ✓');
+}
+
+function restartExec() {
+  execChecked = new Array(execSteps.length).fill(false);
+  execAnnotations = new Array(execSteps.length).fill('');
+  execCurrentIdx = 0;
+  execStartTime = Date.now();
+  execAlreadySaved = false;
+  const gw = document.getElementById('btnGoTraceWrap');
+  if (gw) gw.style.display = 'none';
+  document.getElementById('execComplete').style.display = 'none';
+  document.getElementById('execStepArea').style.display = 'flex';
+  document.getElementById('execNav').style.display = 'flex';
+  renderExecStep();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function exitExec() {
+  showView('module');
+}
+
+// ===== TRAÇABILITÉ =====
+let traceFilter = 'all';
+
+function setTraceFilter(f) {
+  traceFilter = f;
+  document.querySelectorAll('.trace-filter-btn').forEach(b => b.classList.remove('active'));
+  const map = { all: 'traceFilterAll', month: 'traceFilterMonth', annot: 'traceFilterAnnot' };
+  const btn = document.getElementById(map[f]);
+  if (btn) btn.classList.add('active');
+  renderTraceList();
+}
+
+function renderTraceList() {
+  const traces = data.traces || [];
+  let filtered = [...traces];
+
+  if (traceFilter === 'month') {
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    filtered = filtered.filter(t => t.date && t.date.startsWith(ym));
+  } else if (traceFilter === 'annot') {
+    filtered = filtered.filter(t => t.steps && t.steps.some(s => s.annotation && s.annotation.trim()));
+  }
+
+  const subtitle = document.getElementById('traceSubtitle');
+  subtitle.textContent = `${filtered.length} intervention(s) enregistrée(s)`;
+
+  const list = document.getElementById('traceList');
+  if (!filtered.length) {
+    list.innerHTML = `
+      <div class="trace-empty">
+        <div class="trace-empty-icon">📋</div>
+        <div class="trace-empty-title">Aucune intervention</div>
+        <div class="trace-empty-sub">Les procédures exécutées apparaîtront ici</div>
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = filtered.map(t => {
+    const dateFormatted = t.date ? new Date(t.date + 'T00:00:00').toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' }) : '—';
+    const annotSteps = (t.steps||[]).filter(s => s.annotation && s.annotation.trim());
+    return `
+      <div class="trace-card" id="trace_${t.id}">
+        <div class="trace-card-header" onclick="toggleTraceCard('${t.id}')">
+          <div class="trace-card-icon">${t.moduleIcon || '🔧'}</div>
+          <div class="trace-card-info">
+            <div class="trace-card-proc">${escHtml(t.procTitle)}</div>
+            <div class="trace-card-meta">
+              <span class="trace-meta-chip">📅 ${dateFormatted}</span>
+              ${t.engin ? `<span class="trace-engin-chip">🚂 ${escHtml(t.engin)}</span>` : ''}
+              ${t.tech ? `<span class="trace-meta-chip">👤 ${escHtml(t.tech)}</span>` : ''}
+              <span class="trace-meta-chip">⏱ ${t.duration}</span>
+              <span class="trace-meta-chip">${t.stepCount} étape(s)</span>
+              ${annotSteps.length ? `<span class="exec-annot-badge">✎ ${annotSteps.length} note(s)</span>` : ''}
+            </div>
+          </div>
+          <div class="trace-card-chevron">›</div>
+        </div>
+        <div class="trace-card-body" id="traceBody_${t.id}">
+          ${(t.steps||[]).map((s, i) => `
+            <div class="trace-step-row">
+              <div class="trace-step-num">${i+1}</div>
+              <div class="trace-step-content">
+                <div class="trace-step-label">${escHtml(s.label)}</div>
+                ${s.annotation && s.annotation.trim() ? `<div class="trace-step-annotation">📝 ${escHtml(s.annotation)}</div>` : ''}
+              </div>
+            </div>
+          `).join('')}
+          <div class="trace-card-actions">
+            <button class="btn-trace-delete" onclick="deleteTrace('${t.id}')">🗑 Supprimer cette entrée</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleTraceCard(id) {
+  const card = document.getElementById('trace_' + id);
+  if (!card) return;
+  card.classList.toggle('open');
+}
+
+function deleteTrace(id) {
+  if (!confirm('Supprimer cette entrée de traçabilité ?')) return;
+  data.traces = (data.traces || []).filter(t => t.id !== id);
+  saveData();
+  renderTraceList();
+  showToast('Entrée supprimée');
+}
+
+
+// ===== LIGHTBOX =====
+let lightboxPhotos = [];
+let lightboxIndex = 0;
+
+function openLightbox(index, photos) {
+  if (!photos || !photos.length) return;
+  lightboxPhotos = photos;
+  lightboxIndex = index;
+  _showLightboxFrame();
+  document.getElementById('lightbox').classList.add('active');
+  document.addEventListener('keydown', lightboxKeyHandler);
+}
+
+function openLightboxEditor(stepIdx, photoIdx) {
+  // Build flat gallery from all editorSteps photos
+  const allPhotos = [];
+  editorSteps.forEach((s, si) => {
+    (s.photos||[]).forEach((ph, pi) => {
+      allPhotos.push({ src: ph });
+    });
+  });
+  let globalIdx = 0;
+  for (let si = 0; si < stepIdx; si++) {
+    globalIdx += (editorSteps[si].photos||[]).length;
+  }
+  globalIdx += photoIdx;
+  openLightbox(globalIdx, allPhotos);
+}
+
+function _showLightboxFrame() {
+  const img = document.getElementById('lightboxImg');
+  const counter = document.getElementById('lightboxCounter');
+  const prev = document.getElementById('lightboxPrev');
+  const next = document.getElementById('lightboxNext');
+  const entry = lightboxPhotos[lightboxIndex];
+  img.src = entry.src || entry;
+  counter.textContent = `${lightboxIndex + 1} / ${lightboxPhotos.length}`;
+  prev.disabled = lightboxIndex === 0;
+  next.disabled = lightboxIndex === lightboxPhotos.length - 1;
+}
+
+function lightboxNav(dir) {
+  const newIdx = lightboxIndex + dir;
+  if (newIdx < 0 || newIdx >= lightboxPhotos.length) return;
+  lightboxIndex = newIdx;
+  _showLightboxFrame();
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+  document.getElementById('lightboxImg').src = '';
+  document.removeEventListener('keydown', lightboxKeyHandler);
+  lightboxPhotos = [];
+}
+
+function closeLightboxOnOverlay(e) {
+  if (e.target === document.getElementById('lightbox')) closeLightbox();
+}
+
+function lightboxKeyHandler(e) {
+  if (e.key === 'ArrowLeft') lightboxNav(-1);
+  else if (e.key === 'ArrowRight') lightboxNav(1);
+  else if (e.key === 'Escape') closeLightbox();
+}
+
+// ===== MODAL =====
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('active');
+  });
+});
+
+// ===== TOAST =====
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('error', !!isError);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ===== UTILS =====
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) {
+  return String(s || '').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ===== INIT =====
+// ===== EXPORT / IMPORT =====
+function exportData() {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0,10);
+  a.href = url;
+  a.download = `sncf-maintenance-backup-${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Backup téléchargé ✓');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      // Vérification basique que c'est bien nos données
+      if (!imported.modules && !imported.traces && !imported.folders) {
+        showToast('Fichier invalide — ce n'est pas un backup SNCF Maintenance', true);
+        return;
+      }
+      if (!confirm('Importer ce backup ? Tes données actuelles seront remplacées.')) return;
+      data = imported;
+      if (!data.modules) data.modules = [];
+      if (!data.folders) data.folders = [];
+      if (!data.traces) data.traces = [];
+      saveData();
+      renderDashboard();
+      showView('dashboard');
+      showToast('Données importées avec succès ✓');
+    } catch(err) {
+      showToast('Erreur lecture fichier : ' + err.message, true);
+    }
+    // Reset input pour permettre re-import du même fichier
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(reg => {
+        console.log('[PWA] Service Worker enregistré :', reg.scope);
+        // Vérifier si une mise à jour est disponible
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // Nouvelle version disponible — forcer le rechargement
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+              window.location.reload();
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('[PWA] Erreur SW :', err));
+    // Recharger quand le SW prend le contrôle
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  });
+}
+
+// Vérifier si des données sont passées en paramètre URL (?import=...)
+(function() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const imported = params.get('import');
+    if (imported) {
+      const json = decodeURIComponent(escape(atob(imported)));
+      const parsed = JSON.parse(json);
+      if (parsed && (parsed.modules || parsed.traces)) {
+        localStorage.setItem('sncf_maintenance_v3', json);
+        // Nettoyer l'URL sans recharger
+        window.history.replaceState({}, '', window.location.pathname);
+        showToast && showToast('Données importées avec succès ✓');
+      }
+    }
+  } catch(e) {
+    console.warn('Import URL échoué:', e);
+  }
+})();
+
+loadData();
+
+if (!data.modules || !data.modules.length) {
+  const folderElecId = uid();
+  const folderCaisseId = uid();
+
+  data.folders = [
+    { id: folderElecId, name: 'MODULE ELEC', color: 'gold', open: true },
+    { id: folderCaisseId, name: 'MODULE CAISSE', color: 'gold', open: true }
+  ];
+
+  data.modules = [
+    {
+      id: uid(), name: 'GR1 ELEC Z55500', desc: 'GR1 elec Z55500', icon: '⚡', status: 'warn', folderId: folderElecId,
+      procedures: [{ id: uid(), title: 'GR1 ELEC Z55500 (MUPK1 + MIPJD + MITKA)', urgency: 'med', steps: [
+        { id: uid(), label: 'PROTECTION', description: "Mise en Protection: Lever le taquet / Mettre le jalon + Mousqueton / Caller l'engin", warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'CONSULTER', description: 'Consulter les BS + pages M', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'SÉCURITÉ', description: 'Isoler le KVB et FEM / MAT + couper la caténaire', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'BROSSE DE CONTACT', description: "Vérifier Hauteur : Gabarit si NC alors remonter la brosse sans toucher a la connexion Vérifier le boitier de connexion et la cosse Longueur: Si >81mm alors RPL Fixation brosse : 160 Nm Fixation connexion : 50 Nm Fiche visite :", warning: '', pieces: ['Brosse de contact : 7 710 4893', 'Visse brosse : 0 163 2038', 'Rondelles plate : 7 189 4767', 'Écrous : 0 167 0173'], photos: [] },
+        { id: uid(), label: 'SILICAGEL', description: 'Vérifier les billes du transformateur en toiture V11 côté gauche si billes blanche < 50% alors RPL Changer joint torique avec vaseline', warning: '', pieces: ['Joint torique : 0 235 1307'], photos: [] },
+        { id: uid(), label: 'TRESSES + GRILLES', description: 'Vérifier les tresses de masse (50Nm) Et les grilles de ventilation des batteries (obstruction)', warning: '', pieces: ['Tresses de masse BME : 0 839 0036', 'Vis : 0 163 0608', 'Écrous : 7 167 4600', 'Rondelles ressort : 7 189 4374', 'Rondelles plate : 7 168 4398 x2'], photos: [] },
+        { id: uid(), label: 'RE ALIMENTER', description: 'Remettre la caténaire sous tension + MAT + kvb et fem en service', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'TEST CONTINUITÉ', description: 'Si brosse RPL alors faire le test de continuité (SO/SF) dans la cabines côté brosse Fiche visite :', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'TEST EFAS', description: 'Réalisé le test efas', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'OUTILLAGES', description: 'Clef dynamométrique :', warning: '', pieces: ['160Nm : CDYNA55946'], photos: [] },
+        { id: uid(), label: 'DEPREPARER', description: 'Enlever le jalon + Mousqueton / Baisser le taquet', warning: '', pieces: [], photos: [] }
+      ]}]
+    },
+    {
+      id: uid(), name: 'MIPJ2/J3 ELEC Z55500', desc: 'MIPJ2/J3 elec Z55500', icon: '⚡', status: 'warn', folderId: folderElecId,
+      procedures: [{ id: uid(), title: 'MIPJ2/J3 Z55500', urgency: 'med', steps: [
+        { id: uid(), label: 'MISE EN PROTECTION', description: "Mise en protection : Lever le taquet / Mettre le jalon + Mousqueton / Caller l'engin", warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'CONSULTER', description: 'Consulter les BS et pages M', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'SÉCURITÉ', description: 'Faire la MAT + Couper la caténaire', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'FILTRE CONDENSATION', description: 'Rpl les 3 filtres en toiture Filtre M2A Filtre L3M2', warning: '', pieces: ['Filtre M2A : 0 743 0098', 'Filtre L3M2 : 0 743 0099'], photos: [] },
+        { id: uid(), label: 'DISJONCTEUR CONTINU', description: "Nettoyer l'aimant alcool + lubrifié", warning: '', pieces: ['Alcool : 8 210 0118', 'Lubrifiant : 7 210 0355'], photos: [] },
+        { id: uid(), label: 'DISJONCTEUR 25KV', description: 'Nettoyer le couteau du sectionneur : enlever graisse GM3 et remettre nouvelle Nettoyer les isolateur (céramique) avec Socosolv', warning: '', pieces: ['Graisse GM3 : 0 273 6621'], photos: [] },
+        { id: uid(), label: 'RE ALIMENTER', description: 'Remettre sous tension la caténaire / MAT', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'TEST EFAS', description: 'Faire le test EFAS', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'DÉPROTEGER', description: 'Enlever le jalon + Mousqueton / Baisser le taquet', warning: '', pieces: [], photos: [] }
+      ]}]
+    },
+    {
+      id: uid(), name: 'GR1 CAISSE Z55500', desc: 'GR1 caisse Z55500', icon: '⚙️', status: 'warn', folderId: folderCaisseId,
+      procedures: [{ id: uid(), title: 'GR1 CAISSE Z55500', urgency: 'med', steps: [
+        { id: uid(), label: 'MISE EN PROTECTION', description: "Lever le taquet / Mettre le jalon + mousqueton / Caller l'engin", warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'RELEVER', description: 'Relever les BS et pages M', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'SÉCURITÉ', description: 'Faire la MAT et couper la caténaire', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'PANTOGRAPHE', description: "Vérifier les pantographes, shunt, céramique, tube anti balaçant, archet bande d'usure carbone, coussin pneumatiques", warning: '', pieces: ['Shunt :', 'Vis shunt : 0 163 0457', 'Écrous shunt : 7 167 4529', 'Rondelles CS : 0 189 4890', 'Rondelles plate : 7 168 4714', 'Graisse contact : 0 273 6102'], photos: [] },
+        { id: uid(), label: 'CHASSE-PIERRE / SABLIÈRE', description: 'Mesurer la hauteur des chasses pierres (75 a 80mm), et vérifier support chasse pierres Système de sablage', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'RE ALIMENTER', description: 'Remettre la caténaire sous tension / MAT', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'TEST EFAS', description: 'TEST EFAS', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'OUTILLAGES', description: '', warning: '', pieces: ['Clef dynamométrique :'], photos: [] }
+      ]}]
+    },
+    {
+      id: uid(), name: 'MIPJ2/J3 CAISSE Z55500', desc: 'MIPJ2/J3 caisse Z55500', icon: '⚙️', status: 'warn', folderId: folderCaisseId,
+      procedures: [{ id: uid(), title: 'MIPJ2/J3 CAISSE Z55500', urgency: 'med', steps: [
+        { id: uid(), label: 'MISE EN PROTECTION', description: "Lever le taquet / Mettre le jalon + Mousqueton / caller l'engin", warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'LECTURE', description: 'Lire les BS et Pages M', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'SÉCURITÉ', description: 'Faire la MAT / Mettre hors tension la caténaire', warning: '', pieces: [], photos: [] },
+        { id: uid(), label: 'FILTRE', description: 'Rpl les filtres en toiture', warning: '', pieces: ['Filtres :'], photos: [] },
+        { id: uid(), label: 'INTERCAISSE', description: "Vérifier l'état des interclasses , déchirer, plier , infiltration eau", warning: '', pieces: [], photos: [] }
+      ]}]
+    },
+    {
+      id: uid(), name: 'MITK5 Z55500', desc: 'MITK5 Z55500', icon: '⚙️', status: 'ok',
+      procedures: [{ id: uid(), title: 'MITK5 Z55500', urgency: 'low', steps: [] }]
+    }
+  ];
+
+  data.traces = [];
+  saveData();
+}
+
+renderDashboard();
+</script>
+</body>
+</html>
