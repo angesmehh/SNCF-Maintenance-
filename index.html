@@ -2041,6 +2041,9 @@
   </div>
   <div class="header-right">
     <button class="btn-header btn-trace-header" onclick="showView('trace')">📋 Traçabilité</button>
+        <button class="btn-header" onclick="exportData()" title="Exporter toutes mes données" style="background:rgba(39,174,96,0.15);border-color:rgba(39,174,96,0.4);color:#27AE60">💾 Exporter</button>
+        <button class="btn-header" onclick="document.getElementById('importFileInput').click()" title="Importer un backup" style="background:rgba(245,166,35,0.12);border-color:rgba(245,166,35,0.35);color:#F5A623">📂 Importer</button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
     <button class="btn-header" onclick="openNewFolderModal()">📁 Dossier</button>
     <button class="btn-header primary" onclick="openNewModuleModal()">＋ Module</button>
   </div>
@@ -3738,6 +3741,53 @@ function escAttr(s) {
 }
 
 // ===== INIT =====
+// ===== EXPORT / IMPORT =====
+function exportData() {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0,10);
+  a.href = url;
+  a.download = `sncf-maintenance-backup-${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Backup téléchargé ✓');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      // Vérification basique que c'est bien nos données
+      if (!imported.modules && !imported.traces && !imported.folders) {
+        showToast('Fichier invalide — ce n'est pas un backup SNCF Maintenance', true);
+        return;
+      }
+      if (!confirm('Importer ce backup ? Tes données actuelles seront remplacées.')) return;
+      data = imported;
+      if (!data.modules) data.modules = [];
+      if (!data.folders) data.folders = [];
+      if (!data.traces) data.traces = [];
+      saveData();
+      renderDashboard();
+      showView('dashboard');
+      showToast('Données importées avec succès ✓');
+    } catch(err) {
+      showToast('Erreur lecture fichier : ' + err.message, true);
+    }
+    // Reset input pour permettre re-import du même fichier
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
 // ===== PWA SERVICE WORKER =====
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
